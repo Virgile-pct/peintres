@@ -53,6 +53,35 @@ def extract_text(path):
     return txt.strip()
 
 
+def analyse(text):
+    """Renvoie (annee_naissance|None, nb_oeuvres, [sources_nettoyees])."""
+    lines = text.split("\n")
+    birth = None
+    date_idx = -1
+    for i, ln in enumerate(lines[:6]):
+        m = re.search(r"\((?:[^)]*?)(1[0-9]{3}|20[0-2][0-9])", ln)
+        if m:
+            birth = int(m.group(1))
+            date_idx = i
+            break
+
+    oeuvres = 0
+    sources = []
+    for ln in lines[date_idx + 1:]:
+        if not ln.strip():
+            continue
+        if re.match(r"^\s+\S", ln):  # ligne en retrait = source
+            s = ln.strip()
+            s = re.sub(r"\s*n[°ºo]\s*[\dIVXLC].*$", "", s, flags=re.I)
+            s = re.sub(r"\s*pp?\.?\s*[\dIVXLC].*$", "", s, flags=re.I)
+            s = s.strip(" .,;:-")
+            if s and not re.fullmatch(r"[\d\s.,;:/p-]+", s):
+                sources.append(s)
+        else:  # ligne sans retrait = titre d'oeuvre
+            oeuvres += 1
+    return birth, oeuvres, sources
+
+
 def main():
     fiches_out = os.path.join(OUT_DIR, "fiches")
     os.makedirs(fiches_out, exist_ok=True)
@@ -68,17 +97,47 @@ def main():
     print(f"{len(files)} fiches trouvees.")
 
     index = []
+    from collections import Counter
+    century = Counter()
+    sources_count = Counter()
+    top_painters = []
+    n_dates = 0
+    total_oeuvres = 0
+
     for n, path in enumerate(files, start=1):
         name = os.path.splitext(os.path.basename(path))[0].strip()
         text = extract_text(path)
         with open(os.path.join(fiches_out, f"{n}.json"), "w", encoding="utf-8") as f:
             json.dump({"name": name, "text": text}, f, ensure_ascii=False)
         index.append([name, n])
+
+        birth, oeuvres, sources = analyse(text)
+        if birth:
+            n_dates += 1
+            century[(birth - 1) // 100 + 1] += 1
+        total_oeuvres += oeuvres
+        top_painters.append((name, oeuvres, n))
+        for s in sources:
+            sources_count[s] += 1
+
         if n % 500 == 0:
             print(f"  ... {n} fiches traitees")
 
     with open(os.path.join(OUT_DIR, "index.json"), "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False)
+
+    top_painters.sort(key=lambda x: x[1], reverse=True)
+    stats = {
+        "total": len(index),
+        "with_dates": n_dates,
+        "total_oeuvres": total_oeuvres,
+        "by_century": [[c, century[c]] for c in sorted(century)],
+        "top_sources": sources_count.most_common(20),
+        "top_painters": [[nm, ov, idx] for nm, ov, idx in top_painters[:20] if ov > 0],
+        "n_sources_distinctes": len(sources_count),
+    }
+    with open(os.path.join(OUT_DIR, "stats.json"), "w", encoding="utf-8") as f:
+        json.dump(stats, f, ensure_ascii=False)
 
     print(f"Termine : {len(index)} fiches generees dans {OUT_DIR}")
 

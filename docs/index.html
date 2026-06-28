@@ -38,6 +38,8 @@
     width:32px; height:32px; cursor:pointer; display:none;
   }
   #status{padding:8px 4px 0; font-size:13px; color:var(--muted)}
+  .hrow{display:flex; align-items:baseline; justify-content:space-between; gap:10px}
+  .statslink{text-decoration:none; color:var(--accent); font-size:13.5px; font-weight:600; white-space:nowrap}
   main{padding:8px 12px 40px}
   .item{
     display:block; width:100%; text-align:left; cursor:pointer;
@@ -75,7 +77,10 @@
 </head>
 <body>
 <header>
-  <h1>Mes fiches de peintres <span class="count" id="count"></span></h1>
+  <div class="hrow">
+    <h1>Mes fiches de peintres <span class="count" id="count"></span></h1>
+    <a class="statslink" href="stats.html">Vue d'ensemble ›</a>
+  </div>
   <div class="searchbox">
     <input id="q" type="search" inputmode="search" autocomplete="off"
            autocorrect="off" autocapitalize="off" spellcheck="false"
@@ -196,6 +201,8 @@ fetch("index.json").then(r=>r.json()).then(data=>{
   INDEX = data;
   KEYS = INDEX.map(x => norm(x[0]));
   $("count").textContent = "("+INDEX.length.toLocaleString('fr-FR')+")";
+  const m = location.hash.match(/^#q=(.*)$/);
+  if(m){ $("q").value = decodeURIComponent(m[1]); }
   render();
   $("q").focus();
 }).catch(()=>{

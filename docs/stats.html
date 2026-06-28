@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b2f2f">
+<title>Ma collection — vue d'ensemble</title>
+<style>
+  :root{
+    --bg:#f5f1ea; --card:#fffdf9; --ink:#2c2622; --muted:#8a7f73;
+    --accent:#7a5c3e; --bar:#b89b6e; --bar2:#cdb495; --line:#e4dccf;
+    --shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    position:sticky; top:0; z-index:10; background:var(--bg);
+    padding:env(safe-area-inset-top) 14px 10px; border-bottom:1px solid var(--line);
+  }
+  .top{display:flex; align-items:center; gap:8px; margin-top:12px}
+  .back{
+    text-decoration:none; color:var(--accent); font-weight:600; font-size:15px;
+    padding:6px 4px;
+  }
+  h1{font-size:17px; margin:6px 0 0; font-weight:600}
+  main{padding:14px 14px 50px; max-width:680px; margin:0 auto}
+
+  .kpis{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:22px}
+  .kpi{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px; box-shadow:var(--shadow);
+  }
+  .kpi .num{font-size:26px; font-weight:700; color:var(--accent); line-height:1.1}
+  .kpi .lab{font-size:12.5px; color:var(--muted); margin-top:3px}
+
+  section{margin:26px 0}
+  h2{font-size:15px; margin:0 0 12px; font-weight:600}
+  .row{display:flex; align-items:center; gap:8px; margin:7px 0; font-size:13.5px}
+  .row .name{flex:0 0 38%; text-align:right; color:var(--ink); overflow:hidden;
+             text-overflow:ellipsis; white-space:nowrap}
+  .row .track{flex:1; background:#ece4d6; border-radius:6px; height:18px; position:relative}
+  .row .fill{background:var(--bar); height:100%; border-radius:6px; min-width:2px}
+  .row .val{flex:0 0 auto; color:var(--muted); font-variant-numeric:tabular-nums; min-width:34px}
+  .list a{
+    display:flex; justify-content:space-between; gap:10px; text-decoration:none;
+    color:var(--ink); background:var(--card); border:1px solid var(--line);
+    border-radius:10px; padding:11px 13px; margin:7px 0; box-shadow:var(--shadow);
+    font-size:14.5px;
+  }
+  .list a .c{color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums}
+  .list a .rank{color:var(--muted); margin-right:8px; min-width:20px; display:inline-block}
+  .muted{color:var(--muted); font-size:12.5px; margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><a class="back" href="index.html">‹ Recherche</a></div>
+  <h1>Ma collection — vue d'ensemble</h1>
+</header>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <h2>Répartition par siècle de naissance</h2>
+    <div id="century"></div>
+    <div class="muted" id="century-note"></div>
+  </section>
+
+  <section>
+    <h2>Sources les plus citées</h2>
+    <div id="sources"></div>
+  </section>
+
+  <section>
+    <h2>Peintres avec le plus d'œuvres notées</h2>
+    <div class="list" id="painters"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const fr = n => n.toLocaleString('fr-FR');
+const ROMAN = {13:"XIIIᵉ",14:"XIVᵉ",15:"XVᵉ",16:"XVIᵉ",17:"XVIIᵉ",18:"XVIIIᵉ",19:"XIXᵉ",20:"XXᵉ",21:"XXIᵉ"};
+const esc = s => s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function bars(container, data, opts){
+  const max = Math.max(...data.map(d=>d[1]), 1);
+  container.innerHTML = data.map(d=>{
+    const label = opts.label ? opts.label(d[0]) : d[0];
+    const w = (d[1]/max*100).toFixed(1);
+    return '<div class="row"><div class="name" title="'+esc(String(label))+'">'+esc(String(label))
+         +'</div><div class="track"><div class="fill" style="width:'+w+'%"></div></div>'
+         +'<div class="val">'+fr(d[1])+'</div></div>';
+  }).join('');
+}
+
+fetch('stats.json').then(r=>r.json()).then(s=>{
+  $('kpis').innerHTML = [
+    [fr(s.total), 'peintres'],
+    [fr(s.total_oeuvres), 'œuvres notées'],
+    [fr(s.with_dates), 'fiches datées'],
+    [fr(s.n_sources_distinctes), 'sources différentes'],
+  ].map(k=>'<div class="kpi"><div class="num">'+k[0]+'</div><div class="lab">'+k[1]+'</div></div>').join('');
+
+  bars($('century'), s.by_century, {label:c=>ROMAN[c]||c+'ᵉ'});
+  const sansDate = s.total - s.with_dates;
+  $('century-note').textContent = sansDate>0 ? '('+fr(sansDate)+' fiches sans date identifiée)' : '';
+
+  bars($('sources'), s.top_sources, {});
+
+  $('painters').innerHTML = s.top_painters.map((p,i)=>
+    '<a href="index.html#q='+encodeURIComponent(p[0])+'"><span><span class="rank">'+(i+1)
+    +'</span>'+esc(p[0])+'</span><span class="c">'+fr(p[1])+' œuvres</span></a>'
+  ).join('');
+}).catch(()=>{
+  $('kpis').innerHTML = '<div class="kpi">Statistiques indisponibles. Relancez « Mettre à jour ».</div>';
+});
+</script>
+</body>
+</html>
