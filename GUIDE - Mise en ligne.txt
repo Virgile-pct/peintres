@@ -1,0 +1,51 @@
+==================================================================
+  MOTEUR DE RECHERCHE DES PEINTRES — Guide de mise en ligne
+==================================================================
+
+CE QUE VOUS AVEZ DEJA (sur ce PC) :
+  Dossier : C:\Users\FRDPO\peintres-app
+   - docs\            -> le site (appli + 3384 fiches)
+   - generate.py      -> reconstruit l'index depuis vos .odt
+   - "Mettre a jour.bat"  -> a double-cliquer apres avoir ajoute des peintres
+   - "Voir sur ce PC.bat"  -> tester l'appli sur cet ordinateur
+
+------------------------------------------------------------------
+ETAPE 1 — Creer un compte GitHub (gratuit, une seule fois)
+------------------------------------------------------------------
+  1. Aller sur  https://github.com/signup
+  2. Email : pourchetvirgile@gmail.com  (ou un autre)
+  3. Choisir un mot de passe et un "username" (nom d'utilisateur).
+     >>> NOTEZ BIEN CE USERNAME, on en a besoin juste apres. <<<
+  4. Valider l'email recu.
+
+------------------------------------------------------------------
+ETAPE 2 — Creer le depot (l'espace qui contiendra le site)
+------------------------------------------------------------------
+  1. Aller sur  https://github.com/new
+  2. "Repository name" :  peintres
+  3. Laisser sur  PUBLIC
+  4. NE RIEN cocher (pas de README, pas de .gitignore)
+  5. Cliquer "Create repository"
+
+------------------------------------------------------------------
+ETAPE 3 — M'indiquer votre username
+------------------------------------------------------------------
+  Dites-moi votre nom d'utilisateur GitHub : je m'occupe d'envoyer
+  le site en ligne (une fenetre de connexion GitHub s'ouvrira dans
+  le navigateur pour autoriser — vous validez, c'est tout).
+
+------------------------------------------------------------------
+ETAPE 4 — Activer la page web (je vous guiderai)
+------------------------------------------------------------------
+  Sur la page du depot :  Settings > Pages
+   - "Source" : Deploy from a branch
+   - Branch : main   /   dossier : /docs   -> Save
+  Apres ~1 minute, votre site sera a l'adresse :
+     https://VOTRE-USERNAME.github.io/peintres/
+
+==================================================================
+  ENSUITE, AU QUOTIDIEN :
+  Vous ajoutez des fiches .odt dans votre dossier habituel, puis
+  double-clic sur "Mettre a jour.bat" -> le site en ligne se met
+  a jour tout seul en ~1 minute.
+==================================================================
