@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b2f2f">
+<title>Mes fiches de peintres</title>
+<style>
+  :root{
+    --bg:#f5f1ea; --card:#fffdf9; --ink:#2c2622; --muted:#8a7f73;
+    --accent:#7a5c3e; --line:#e4dccf; --shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    background:var(--bg);
+    padding:env(safe-area-inset-top) 16px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  h1{font-size:18px; margin:14px 2px 10px; font-weight:600; letter-spacing:.3px}
+  h1 .count{font-size:13px; color:var(--muted); font-weight:400}
+  .searchbox{position:relative}
+  #q{
+    width:100%; font-size:17px; padding:13px 40px 13px 14px;
+    border:1px solid var(--line); border-radius:12px; background:var(--card);
+    color:var(--ink); outline:none; box-shadow:var(--shadow);
+  }
+  #q:focus{border-color:var(--accent)}
+  #clear{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    border:none; background:none; font-size:22px; color:var(--muted);
+    width:32px; height:32px; cursor:pointer; display:none;
+  }
+  #status{padding:8px 4px 0; font-size:13px; color:var(--muted)}
+  main{padding:8px 12px 40px}
+  .item{
+    display:block; width:100%; text-align:left; cursor:pointer;
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:14px 14px; margin:8px 0; font-size:16px; color:var(--ink);
+    box-shadow:var(--shadow);
+  }
+  .item:active{background:#f0e9dd}
+  .item mark{background:#f2e2b8; color:inherit; padding:0 1px; border-radius:2px}
+  .empty{text-align:center; color:var(--muted); padding:50px 20px; font-size:15px}
+
+  /* Vue fiche */
+  #fiche{
+    position:fixed; inset:0; background:var(--bg); z-index:30;
+    display:none; flex-direction:column;
+  }
+  #fiche.open{display:flex}
+  .fhead{
+    display:flex; align-items:center; gap:6px;
+    padding:env(safe-area-inset-top) 10px 10px; border-bottom:1px solid var(--line);
+    background:var(--bg);
+  }
+  .back{
+    border:none; background:none; font-size:16px; color:var(--accent);
+    padding:8px 6px; cursor:pointer; font-weight:600;
+  }
+  .ftitle{font-size:16px; font-weight:600; flex:1; padding-right:10px}
+  .fbody{
+    flex:1; overflow:auto; padding:18px 18px 60px;
+    white-space:pre-wrap; line-height:1.55; font-size:16px;
+    background:var(--card);
+  }
+  .fbody .loading{color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mes fiches de peintres <span class="count" id="count"></span></h1>
+  <div class="searchbox">
+    <input id="q" type="search" inputmode="search" autocomplete="off"
+           autocorrect="off" autocapitalize="off" spellcheck="false"
+           placeholder="Rechercher un peintre…">
+    <button id="clear" aria-label="Effacer">&times;</button>
+  </div>
+  <div id="status"></div>
+</header>
+
+<main id="results"><div class="empty" id="empty">Chargement…</div></main>
+
+<section id="fiche" aria-hidden="true">
+  <div class="fhead">
+    <button class="back" id="back">‹ Retour</button>
+    <div class="ftitle" id="ftitle"></div>
+  </div>
+  <div class="fbody" id="fbody"></div>
+</section>
+
+<script>
+const MAX_RESULTS = 60;
+let INDEX = [];        // [[name, n], ...]
+let KEYS = [];         // version normalisee des noms (sans accents/maj)
+const $ = id => document.getElementById(id);
+
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"")
+                   .toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// surligne les termes recherches dans le nom affiche
+function highlight(name, terms){
+  if(!terms.length) return escapeHtml(name);
+  const nk = norm(name);
+  // map des positions: on travaille sur le nom normalise puis on reporte
+  let html = "", i = 0;
+  const lower = name.toLowerCase();
+  // recherche simple terme par terme sur la chaine d'origine (insensible accents via norm par caractere est complexe;
+  // on surligne sur la base d'une correspondance approximative simple)
+  return escapeHtml(name).replace(new RegExp("("+terms.map(escapeReg).join("|")+")","gi"),
+                    m => "<mark>"+m+"</mark>");
+}
+function escapeReg(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+
+function render(){
+  const raw = $("q").value;
+  $("clear").style.display = raw ? "block" : "none";
+  const query = norm(raw);
+  const results = $("results");
+
+  if(!query){
+    results.innerHTML = '<div class="empty">Tapez un nom pour rechercher parmi vos '
+      + INDEX.length.toLocaleString('fr-FR') + ' fiches.</div>';
+    $("status").textContent = "";
+    return;
+  }
+
+  const terms = query.split(" ").filter(Boolean);
+  const found = [];
+  for(let i=0;i<KEYS.length;i++){
+    const k = KEYS[i];
+    if(terms.every(t => k.includes(t))){ found.push(i); if(found.length>MAX_RESULTS+1) break; }
+  }
+
+  if(found.length===0){
+    results.innerHTML = '<div class="empty">Aucune fiche pour « '+escapeHtml(raw)
+      +' ».<br>Vous n\'avez pas (encore) de fiche sur ce peintre.</div>';
+    $("status").textContent = "0 résultat";
+    return;
+  }
+
+  const shown = found.slice(0, MAX_RESULTS);
+  $("status").textContent = found.length>MAX_RESULTS
+      ? "Plus de "+MAX_RESULTS+" résultats — précisez le nom"
+      : found.length + (found.length>1?" fiches trouvées":" fiche trouvée");
+
+  // termes d'origine (avec accents tapes) pour le surlignage
+  const rawTerms = raw.trim().split(/\s+/).filter(Boolean);
+  results.innerHTML = shown.map(i =>
+    '<button class="item" data-n="'+INDEX[i][1]+'">'+highlight(INDEX[i][0], rawTerms)+'</button>'
+  ).join("");
+}
+
+async function openFiche(n, name){
+  $("ftitle").textContent = name;
+  $("fbody").innerHTML = '<span class="loading">Chargement de la fiche…</span>';
+  $("fiche").classList.add("open");
+  $("fiche").setAttribute("aria-hidden","false");
+  document.body.style.overflow = "hidden";
+  history.pushState({fiche:true}, "");
+  try{
+    const r = await fetch("fiches/"+n+".json");
+    const data = await r.json();
+    $("fbody").textContent = data.text || "(Fiche vide)";
+  }catch(e){
+    $("fbody").textContent = "Impossible de charger la fiche (hors-ligne ?).";
+  }
+}
+function closeFiche(){
+  $("fiche").classList.remove("open");
+  $("fiche").setAttribute("aria-hidden","true");
+  document.body.style.overflow = "";
+}
+
+$("results").addEventListener("click", e => {
+  const btn = e.target.closest(".item");
+  if(btn){ openFiche(btn.dataset.n, btn.textContent); }
+});
+$("back").addEventListener("click", () => history.back());
+window.addEventListener("popstate", closeFiche);
+$("q").addEventListener("input", render);
+$("clear").addEventListener("click", () => { $("q").value=""; render(); $("q").focus(); });
+
+// Chargement de l'index
+fetch("index.json").then(r=>r.json()).then(data=>{
+  INDEX = data;
+  KEYS = INDEX.map(x => norm(x[0]));
+  $("count").textContent = "("+INDEX.length.toLocaleString('fr-FR')+")";
+  render();
+  $("q").focus();
+}).catch(()=>{
+  $("results").innerHTML = '<div class="empty">Impossible de charger la liste des fiches.</div>';
+});
+</script>
+</body>
+</html>
