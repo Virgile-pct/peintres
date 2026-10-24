@@ -38,6 +38,7 @@
         ${l.sousTitre ? `<p class="tiroir__sous-titre">${esc(l.sousTitre)}</p>` : ''}
         ${l.auteurs.length ? `<p class="tiroir__auteurs">${esc(l.auteurs.join(', '))}</p>` : ''}
         ${meta ? `<p class="tiroir__meta">${esc(meta)}</p>` : ''}
+        ${l.dedicace ? '<p class="tiroir__dedicace">Dédicacé</p>' : ''}
         ${l.serie ? `<p class="tiroir__serie"><a href="#/series">${esc(l.serie)}</a>${l.tome ? `, tome ${esc(l.tome)}` : ''}</p>` : ''}
       </div>`;
   }
@@ -99,8 +100,9 @@
           ${champ(l, 'isbn', 'ISBN (code-barres)')}
           ${champ(l, 'couverture', 'Adresse de l\'image de couverture', { large: true, type: 'url' })}
         </div>
+        <label class="case-a-cocher"><input type="checkbox" data-champ="dedicace"${l.dedicace ? ' checked' : ''}><span>Livre dédicacé</span></label>
         <label class="champ champ--large"><span>Notes personnelles</span>
-          <textarea class="saisie" data-champ="remarques" rows="3" placeholder="Offert par…, dédicacé, à relire l'été…">${esc(l.remarques)}</textarea></label>
+          <textarea class="saisie" data-champ="remarques" rows="3" placeholder="Offert par…, dédicacé à…, à relire l'été…">${esc(l.remarques)}</textarea></label>
         ${l.resume ? `<details class="tiroir__resume"><summary>Résumé de l'éditeur</summary><p>${esc(l.resume)}</p></details>` : ''}
       </section>
       <section class="tiroir__pied">
@@ -176,12 +178,12 @@
     const l = livreOuvert();
     if (!el || !l) return;
     const nom = el.dataset.champ;
-    const valeur = convertir(nom, el.value);
+    const valeur = el.type === 'checkbox' ? el.checked : convertir(nom, el.value);
     if (JSON.stringify(valeur) === JSON.stringify(l[nom])) return;
     l[nom] = valeur;
     const evenement = nom === 'piece' || nom === 'rangement' ? { type: 'deplacement', detail: D.emplacement(l) || 'pas rangé' } : null;
     await D.enregistrerLivre(l, evenement);
-    if (['titre', 'sousTitre', 'auteurs', 'editeur', 'collection', 'annee', 'pages', 'serie', 'tome', 'couverture'].includes(nom)) {
+    if (['titre', 'sousTitre', 'auteurs', 'editeur', 'collection', 'annee', 'pages', 'serie', 'tome', 'couverture', 'dedicace'].includes(nom)) {
       majZone('haut', rendreHaut(l));
     }
     el.classList.add('saisie--enregistree');

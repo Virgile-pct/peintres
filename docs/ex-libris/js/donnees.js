@@ -73,7 +73,7 @@
     pages: null, hauteur: null, serie: '', tome: '', genre: '', prix: null, langue: '',
     couverture: '', resume: '', source: 'manuel', ark: '',
     piece: '', rangement: '', statut: '', note: 0, avis: '', dateDebut: '', dateLecture: '',
-    exemplaires: 1, remarques: '', sorti: null,
+    exemplaires: 1, dedicace: false, remarques: '', sorti: null,
   };
 
   function nouveauLivre(fiche) {

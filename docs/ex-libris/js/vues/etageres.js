@@ -15,7 +15,7 @@
   const VUES = [['dos', 'Dos'], ['couvertures', 'Couvertures'], ['liste', 'Liste']];
   const FILTRES_STATUT = [
     ['', 'Toutes les lectures'], ['a-lire', 'À lire'], ['en-cours', 'En cours'], ['lu', 'Lus'],
-    ['abandonne', 'Abandonnés'], ['aucun', 'Lecture non précisée'], ['retires', 'Livres retirés'],
+    ['abandonne', 'Abandonnés'], ['aucun', 'Lecture non précisée'], ['dedicaces', 'Livres dédicacés'], ['retires', 'Livres retirés'],
   ];
   const TRIS = { auteur: 'Auteur', titre: 'Titre', ajout: 'Derniers ajoutés', annee: 'Année de parution' };
 
@@ -42,7 +42,8 @@
       });
     }
     if (p.genre) liste = liste.filter((l) => l.genre === p.genre);
-    if (p.statut && p.statut !== 'retires') liste = liste.filter((l) => (l.statut || 'aucun') === p.statut);
+    if (p.statut === 'dedicaces') liste = liste.filter((l) => l.dedicace);
+    else if (p.statut && p.statut !== 'retires') liste = liste.filter((l) => (l.statut || 'aucun') === p.statut);
     if (p.piece) liste = liste.filter((l) => (p.piece === PAS_RANGES ? !l.piece && !l.rangement : l.piece === p.piece));
     return liste.sort(ORDRES[p.tri] || ORDRES.auteur);
   }

@@ -85,7 +85,7 @@
       ['Pages', (l) => l.pages], ['Genre', (l) => l.genre], ['Série', (l) => l.serie], ['Tome', (l) => l.tome],
       ['Pièce', (l) => l.piece], ['Meuble ou étagère', (l) => l.rangement], ['Lecture', (l) => Bib.fiche.LIBELLES_STATUT[l.statut] || ''],
       ['Lu le', (l) => l.dateLecture], ['Note', (l) => l.note || ''], ['Prix', (l) => (l.prix ? String(l.prix).replace('.', ',') : '')],
-      ['Exemplaires', (l) => l.exemplaires], ['Ajouté le', (l) => (l.dateAjout || '').slice(0, 10)],
+      ['Exemplaires', (l) => l.exemplaires], ['Dédicacé', (l) => (l.dedicace ? 'oui' : '')], ['Ajouté le', (l) => (l.dateAjout || '').slice(0, 10)],
     ];
     const cellule = (v) => {
       const s = String(v ?? '');

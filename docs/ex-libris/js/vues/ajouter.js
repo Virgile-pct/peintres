@@ -293,6 +293,7 @@
         ${champ('tome', 'Tome')}
         ${champ('genre', 'Genre', 'list="liste-genres"')}
         ${champ('pages', 'Pages', 'inputmode="numeric"')}
+        <label class="case-a-cocher champ--large"><input type="checkbox" name="dedicace"><span>Livre dédicacé</span></label>
         <input type="hidden" name="isbn" value="${esc(r.code || f.isbn || '')}">
         <div class="resultat__actions champ--large">
           <button class="bouton" type="submit">Ajouter à la bibliothèque</button>
@@ -606,7 +607,7 @@
         auteurs: v('auteurs').split(',').map((a) => a.trim()).filter(Boolean),
         editeur: v('editeur'), annee: v('annee'), serie: v('serie'), tome: v('tome'), genre: v('genre'),
         pages: Math.round(Number(v('pages'))) || null,
-        isbn: v('isbn'), source: 'manuel',
+        isbn: v('isbn'), source: 'manuel', dedicace: form.elements.dedicace.checked,
       };
       const l = await ajouterLivre(fiche, D.envieCorrespondante(fiche));
       montrer({ type: 'ajoute', livre: l });
