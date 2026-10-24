@@ -617,6 +617,8 @@
   Object.assign(Bib.changements, {
     'choisir-emplacement': (el) => {
       if (el.value !== '') allerA(Number(el.value));
+      const champ = document.getElementById('champ-scan');
+      if (champ) champ.focus({ preventScroll: true }); // prêt pour la douchette
     },
   });
 
