@@ -13,35 +13,19 @@
   const LECTEUR_PORTABLE = 'https://cdn.jsdelivr.net/npm/barcode-detector@3.0.8/dist/iife/ponyfill.js';
   const ECART_MAX_MS = 60; // un humain ne tape pas deux chiffres en moins de 60 ms
 
-  // Les champs faits pour recevoir un code : la douchette y écrit normalement.
-  const CHAMPS_A_CODE = '[data-form="scan"] input, [data-form="comptoir"] input, [data-champ="isbn"]';
-  const CHAMPS_TEXTE = 'input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, [contenteditable="true"]';
-
   function ecouterDouchette(surCode) {
     let tampon = '';
     let dernier = 0;
-    let champ = null; // champ texte qui avait le focus au début de la rafale, et sa valeur d'avant
-    let valeurAvant = '';
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.altKey || e.metaKey) return;
-      const cible = e.target.closest ? e.target : null;
-      if (cible && cible.closest(CHAMPS_A_CODE)) return;
+      // Dans un champ de saisie, c'est le champ qui reçoit le code.
+      if (e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
       const maintenant = performance.now();
-      if (maintenant - dernier > ECART_MAX_MS) {
-        tampon = '';
-        champ = cible && cible.closest(CHAMPS_TEXTE);
-        valeurAvant = champ ? (champ.value ?? champ.textContent) : '';
-      }
+      if (maintenant - dernier > ECART_MAX_MS) tampon = '';
       dernier = maintenant;
       if (e.key === 'Enter') {
         if (tampon.length >= 10) {
-          // Rafale tapée dans un autre champ (pièce, titre…) : on lui rend sa valeur, le code part au scan.
           e.preventDefault();
-          if (champ) {
-            if ('value' in champ) champ.value = valeurAvant;
-            else champ.textContent = valeurAvant;
-            champ.dispatchEvent(new Event('input', { bubbles: true })); // une recherche en cours se remet à jour
-          }
           surCode(tampon);
         }
         tampon = '';
