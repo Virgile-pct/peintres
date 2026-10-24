@@ -108,6 +108,14 @@
       </section>
 
       <section class="reglage">
+        <h2>Étagères prévues</h2>
+        <p>La liste proposée dans « Ajouter des livres », dans l'ordre de l'inventaire. Une étagère par ligne : la pièce, une barre « / », puis le meuble et l'étagère.</p>
+        <label class="champ"><span>${pluriel(D.emplacements().length, 'étagère prévue', 'étagères prévues')}</span>
+          <textarea class="saisie saisie--etageres" data-change="emplacements" spellcheck="false" rows="8"
+            placeholder="Salon / Bibliothèque, étagère 1">${esc(D.emplacements().map((e) => [e.piece, e.rangement].filter(Boolean).join(' / ')).join('\n'))}</textarea></label>
+      </section>
+
+      <section class="reglage">
         <h2>Catalogues consultés</h2>
         <p>À chaque scan, Ex-libris interroge le catalogue de la <strong>Bibliothèque nationale de France</strong>, qui connaît presque tous les livres publiés en France, puis <strong>Open Library</strong> pour les livres étrangers et les couvertures.</p>
         <label class="champ champ--moyen"><span>Clé Google Books (facultatif)</span>
@@ -135,6 +143,14 @@
   });
 
   Object.assign(Bib.changements, {
+    'emplacements': (el) => {
+      const liste = el.value.split('\n').map((ligne) => ligne.trim()).filter(Boolean).map((ligne) => {
+        const i = ligne.indexOf('/');
+        return i === -1 ? { piece: '', rangement: ligne } : { piece: ligne.slice(0, i).trim(), rangement: ligne.slice(i + 1).trim() };
+      });
+      D.reglage('emplacements', liste);
+      toast(pluriel(liste.length, 'étagère enregistrée', 'étagères enregistrées') + '.');
+    },
     'restaurer': async (el) => {
       const fichier = el.files[0];
       if (!fichier) return;

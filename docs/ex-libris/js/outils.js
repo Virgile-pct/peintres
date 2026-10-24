@@ -21,7 +21,7 @@
   const sansAccents = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '');
   // Clé de comparaison : minuscules, sans accents ni ponctuation (« L'Étranger » = « l etranger »).
   const cle = (s) => sansAccents(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  const comparer = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), 'fr', { sensitivity: 'base' });
+  const comparer = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), 'fr', { sensitivity: 'base', numeric: true });
 
   // Une « œuvre » = titre + nom de famille du premier auteur, sans accents ni ponctuation.
   // Ça repère le même livre en poche et en grand format, qui ont deux ISBN différents.

@@ -158,8 +158,10 @@
   // ---- Listes pour les suggestions de saisie ----
 
   const distincts = (valeurs) => [...new Set(valeurs.filter(Boolean))].sort(Bib.outils.comparer);
-  const pieces = () => distincts(etat.livres.map((l) => l.piece));
-  const rangements = () => distincts(etat.livres.map((l) => l.rangement));
+  // Étagères prévues à l'avance (réglage « emplacements ») : proposées même quand elles sont encore vides.
+  const emplacements = () => (etat.reglages.emplacements || []).filter((e) => e && (e.piece || e.rangement));
+  const pieces = () => distincts([...etat.livres, ...emplacements()].map((l) => l.piece));
+  const rangements = () => distincts([...etat.livres, ...emplacements()].map((l) => l.rangement));
   const genres = () => distincts(etat.livres.map((l) => l.genre));
 
   // ---- Restauration d'une sauvegarde : on garde la version la plus récente de chaque fiche ----
@@ -198,6 +200,6 @@
   Bib.donnees = {
     etat, charger, abonner, presents, livre, emplacement, nouveauLivre,
     enregistrerLivre, supprimerLivre, enregistrerEnvie, supprimerEnvie, reglage, journaliser,
-    parIsbn, autresEditions, envieCorrespondante, cleOeuvre, pieces, rangements, genres, fusionner,
+    parIsbn, autresEditions, envieCorrespondante, cleOeuvre, emplacements, pieces, rangements, genres, fusionner,
   };
 })();

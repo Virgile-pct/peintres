@@ -27,6 +27,51 @@
   const reglages = () => D.etat.reglages;
   const statutParDefaut = () => (reglages().statutDefaut ?? 'a-lire');
 
+  // ---------- Étagères prévues ----------
+
+  // « Grande bibliothèque gauche, étagère 3 » se range sous le meuble « Grande bibliothèque gauche ».
+  const meubleDe = (e) => {
+    const i = (e.rangement || '').lastIndexOf(', ');
+    return i > 0 ? e.rangement.slice(0, i) : '';
+  };
+
+  function indexEmplacementCourant() {
+    const r = reglages();
+    return D.emplacements().findIndex((e) => (e.piece || '') === (r.pieceCourante || '') && (e.rangement || '') === (r.rangementCourant || ''));
+  }
+
+  function rendreChoixEtagere() {
+    const liste = D.emplacements();
+    if (!liste.length) return '';
+    const courant = indexEmplacementCourant();
+    const groupes = [];
+    liste.forEach((e, i) => {
+      const nom = [e.piece, meubleDe(e)].filter(Boolean).join(', ') || 'Autres';
+      if (!groupes.length || groupes[groupes.length - 1].nom !== nom) groupes.push({ nom, options: [] });
+      groupes[groupes.length - 1].options.push(`<option value="${i}"${i === courant ? ' selected' : ''}>${esc(e.rangement || e.piece)}</option>`);
+    });
+    return `<label class="champ choix-etagere"><span>Étagère prévue</span>
+      <select class="saisie" data-change="choisir-emplacement" id="choix-etagere">
+        <option value=""${courant === -1 ? ' selected' : ''}>Choisis une étagère…</option>
+        ${groupes.map((g) => `<optgroup label="${esc(g.nom)}">${g.options.join('')}</optgroup>`).join('')}
+      </select></label>`;
+  }
+
+  // Met l'étagère courante à jour sans redessiner l'écran (un scan peut être en cours).
+  async function allerA(index) {
+    const e = D.emplacements()[index];
+    if (!e) return;
+    await D.reglage('pieceCourante', e.piece || '');
+    await D.reglage('rangementCourant', e.rangement || '');
+    const champs = { pieceCourante: e.piece || '', rangementCourant: e.rangement || '' };
+    for (const [cle, valeur] of Object.entries(champs)) {
+      const champ = document.querySelector(`[data-cle="${cle}"]`);
+      if (champ) champ.value = valeur;
+    }
+    const choix = document.getElementById('choix-etagere');
+    if (choix) choix.value = String(index);
+  }
+
   // ---------- Rendu ----------
 
   function rendre(params) {
@@ -70,6 +115,7 @@
 
           <fieldset class="rangement-courant${inventaire ? ' rangement-courant--inventaire' : ''}">
             <legend>${inventaire ? 'Étagère inventoriée' : 'Où ranger les nouveaux livres ?'}</legend>
+            ${rendreChoixEtagere()}
             <div class="grille-champs">
               <label class="champ"><span>Pièce</span>
                 <input class="saisie" data-change="reglage" data-cle="pieceCourante" list="liste-pieces" value="${esc(r.pieceCourante || '')}" placeholder="Salon, chambre…"></label>
@@ -287,7 +333,11 @@
           <ul class="avertissement__liste">${r.absents.map((l) => `<li><button type="button" class="lien-livre" data-action="fiche" data-id="${esc(l.id)}">${C.htmlCouverture(l, 'couv--mini')}<span><strong>${esc(l.titre)}</strong><br><small>${esc(l.auteurs.join(', '))}</small></span></button></li>`).join('')}</ul>
         </div>`
         : '<p>Aucun livre ne manque à l\'appel.</p>'}
-      <p>Indique la prochaine étagère à gauche, puis continue de scanner.</p>
+      ${r.suivante ? `<div class="resultat__actions">
+          <button type="button" class="bouton" data-action="etagere-suivante" data-index="${r.suivante.index}">Passer à l'étagère suivante</button>
+        </div>
+        <p class="section__aide">Ensuite : ${esc(r.suivante.lieu)}.</p>`
+        : '<p>Indique la prochaine étagère à gauche, puis continue de scanner.</p>'}
     </div>`;
   }
 
@@ -490,11 +540,21 @@
       const absents = (piece || rangement)
         ? D.presents().filter((l) => l.piece === piece && l.rangement === rangement && !vus.has(l.id))
         : [];
-      const bilan = { type: 'bilan', vus: etat.session.length, absents, lieu: [piece, rangement].filter(Boolean).join(', ') };
+      const i = indexEmplacementCourant();
+      const prochaine = i === -1 ? null : D.emplacements()[i + 1];
+      const suivante = prochaine ? { index: i + 1, lieu: [prochaine.piece, prochaine.rangement].filter(Boolean).join(', ') } : null;
+      const bilan = { type: 'bilan', vus: etat.session.length, absents, suivante, lieu: [piece, rangement].filter(Boolean).join(', ') };
       etat.session = [];
       montrer(bilan);
       const champRangement = document.querySelector('[data-cle="rangementCourant"]');
       if (champRangement) champRangement.select();
+    },
+    'etagere-suivante': async (el) => {
+      await allerA(Number(el.dataset.index));
+      montrer(null);
+      const champ = document.getElementById('champ-scan');
+      if (champ) champ.focus({ preventScroll: true });
+      toast(`Étagère suivante : ${reglages().rangementCourant}.`);
     },
     'saisie-manuelle': () => {
       montrer({ type: 'manuel', code: '' });
@@ -550,6 +610,12 @@
       };
       const l = await ajouterLivre(fiche, D.envieCorrespondante(fiche));
       montrer({ type: 'ajoute', livre: l });
+    },
+  });
+
+  Object.assign(Bib.changements, {
+    'choisir-emplacement': (el) => {
+      if (el.value !== '') allerA(Number(el.value));
     },
   });
 

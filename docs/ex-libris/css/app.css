@@ -186,6 +186,8 @@ small { font-size: var(--t-xs); }
 .saisie:hover { border-color: #AEB9AB; }
 .saisie:focus { outline: none; border-color: var(--vert); box-shadow: 0 0 0 4px var(--vert-clair); }
 textarea.saisie { min-height: 96px; resize: vertical; line-height: 1.5; }
+.saisie--etageres { min-height: 220px; font-size: 0.95em; }
+.choix-etagere { margin-bottom: 14px; }
 select.saisie { cursor: pointer; }
 .saisie--enregistree { border-color: #4C9468; background: #EEF6EF; }
 .grille-champs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
