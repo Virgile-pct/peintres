@@ -4,7 +4,7 @@
  * (une mise à jour de l'appli apparaît donc à l'ouverture suivante).
  * Seuls les fichiers de la version téléphone sont concernés ; le reste passe sans détour.
  */
-const CACHE = 'ex-libris-poche-1';
+const CACHE = 'ex-libris-poche-2';
 const FICHIERS = [
   'poche.html', 'manifest-poche.webmanifest', 'css/app.css', 'css/poche.css',
   'js/outils.js', 'js/icones.js', 'js/isbn.js', 'js/catalogues.js', 'js/couverture.js', 'js/scanner.js', 'js/poche.js',

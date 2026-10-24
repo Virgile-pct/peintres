@@ -8,7 +8,16 @@
   'use strict';
   const Bib = (window.Bib = window.Bib || {});
 
-  const chiffres = (s) => String(s ?? '').toUpperCase().replace(/[^0-9X]/g, '');
+  // Douchette réglée en clavier américain sur un PC français : elle « tape » &é"'(-è_çà
+  // au lieu de 1234567890. Une saisie sans aucun chiffre, faite de ces seuls caractères, est remise d'aplomb.
+  const AZERTY = { '&': '1', 'é': '2', '"': '3', "'": '4', '(': '5', '-': '6', 'è': '7', '_': '8', 'ç': '9', 'à': '0' };
+  function remettreChiffres(s) {
+    const t = String(s ?? '').trim();
+    if (/\d/.test(t) || !/^[&é"'(\-è_çà]{10,}$/.test(t)) return t;
+    return [...t].map((c) => AZERTY[c]).join('');
+  }
+
+  const chiffres = (s) => remettreChiffres(s).toUpperCase().replace(/[^0-9X]/g, '');
 
   // Clé EAN-13 : poids 1 et 3 en alternance, puis complément à 10.
   function cleEan13(douze) {
@@ -55,7 +64,7 @@
   }
 
   // Une saisie du comptoir est un code si elle n'est faite que de chiffres (et tirets, espaces).
-  const ressembleACode = (s) => /^[\d\s-]+[\dXx]?$/.test(String(s).trim()) && chiffres(s).length >= 10;
+  const ressembleACode = (s) => /^[\d\s-]+[\dXx]?$/.test(remettreChiffres(s)) && chiffres(s).length >= 10;
 
   Bib.isbn = { analyser, chiffres, versIsbn10, versIsbn13, ean13Valide, ressembleACode };
 })();

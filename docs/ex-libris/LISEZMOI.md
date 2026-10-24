@@ -9,18 +9,23 @@ Edge ou Chrome. Les livres restent sur l'ordinateur.
 
 ## Installer sur l'ordinateur de maman
 
-1. Copier tout le dossier `bibliotheque-maman` sur son ordinateur, par exemple dans `Documents`.
-2. Clic droit sur `index.html`, puis « Ouvrir avec », puis **Microsoft Edge** (ou Chrome).
-   Firefox marche aussi, mais sans la sauvegarde automatique.
-3. Dans Edge, ajouter la page aux favoris, ou créer un raccourci sur le Bureau
-   (menu `…` > Autres outils > Épingler à la barre des tâches).
-4. Dans l'appli, aller dans **Sauvegarde** et cliquer sur « Choisir le fichier de sauvegarde ».
-   Choisir un dossier OneDrive si elle en a un, sinon une clé USB qui reste branchée.
-   Après un redémarrage, Edge peut redemander l'autorisation : un clic sur
-   « Reprendre la sauvegarde » en haut à droite suffit.
+Méthode conseillée : la version en ligne, installée comme une application.
 
-Important : toujours ouvrir le même fichier `index.html`, au même endroit, avec le même
-navigateur. Les livres sont rangés dans ce navigateur, pour ce fichier-là.
+1. Ouvrir **Microsoft Edge** à l'adresse https://virgile-pct.github.io/peintres/ex-libris/
+2. Menu `…` > Applications > « Installer ce site en tant qu'application », nom « Ex-libris ».
+   Accepter l'épinglage à la barre des tâches et au menu Démarrer.
+3. Dans l'appli, page **Sauvegarde** : écrire le nom de la bibliothèque, puis
+   « Choisir le fichier de sauvegarde » et enregistrer `ma-bibliotheque.json` dans
+   OneDrive > Documents. Si Edge demande l'accès, « Autoriser » (et « à chaque visite » si proposé).
+4. Brancher la douchette et scanner un livre dans « Ajouter des livres » pour vérifier.
+
+Après un redémarrage, Edge peut redemander l'accès au fichier : un clic sur
+« Reprendre la sauvegarde » en haut à droite suffit.
+
+Sans Internet à demeure, on peut aussi copier ce dossier sur l'ordinateur et ouvrir
+`index.html` avec Edge, mais l'appli ne se mettra plus à jour toute seule. Les livres sont
+rangés dans le navigateur, pour une adresse donnée : ne pas mélanger les deux méthodes
+(sinon, passer de l'une à l'autre avec « Restaurer une sauvegarde »).
 
 ## Sur le téléphone (en librairie)
 
@@ -60,7 +65,8 @@ téléphones prennent la nouvelle version.
 ## La douchette
 
 N'importe quelle douchette USB (lecteur de codes-barres « clavier », 15 à 25 €) fonctionne
-sans réglage : on la branche, on scanne. L'appli reconnaît la rafale de chiffres où que l'on
+sans réglage : on la branche, on scanne. Même réglée en clavier américain (elle tape alors
+`&é"'(-è_çà` au lieu des chiffres sur un PC français), l'appli remet les chiffres d'aplomb. L'appli reconnaît la rafale de chiffres où que l'on
 soit, même sans cliquer dans un champ. La webcam marche aussi, mais elle fait souvent la mise
 au point moins bien qu'une douchette.
 

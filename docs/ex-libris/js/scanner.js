@@ -29,8 +29,10 @@
           surCode(tampon);
         }
         tampon = '';
-      } else if (/^[0-9Xx]$/.test(e.key)) {
-        tampon += e.key;
+      } else {
+        // e.code désigne la touche physique : « Digit1 » reste un 1 quel que soit le clavier (AZERTY ou QWERTY).
+        const chiffre = /^(?:Digit|Numpad)(\d)$/.exec(e.code || '');
+        if (chiffre) tampon += chiffre[1];
       }
     });
   }
