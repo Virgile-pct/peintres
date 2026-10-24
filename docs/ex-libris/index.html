@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Ex-libris</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='9' y='2' width='14' height='28' rx='1.5' fill='%232E5245'/%3E%3Crect x='9' y='6' width='14' height='1.6' fill='%23B48A3C'/%3E%3Crect x='9' y='24.4' width='14' height='1.6' fill='%23B48A3C'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <!-- Grain d'encre du tampon « Déjà dans ta bibliothèque ». -->
+  <svg class="filtres-svg" aria-hidden="true" focusable="false" width="0" height="0">
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="bruit"/>
+      <feDisplacementMap in="SourceGraphic" in2="bruit" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <div class="cadre">
+    <nav class="nav" aria-label="Sections">
+      <a class="marque" href="#/accueil">
+        <svg class="marque__cartouche" viewBox="0 0 150 92" aria-hidden="true">
+          <rect x="2" y="2" width="146" height="88" rx="44" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="7" y="7" width="136" height="78" rx="39" fill="none" stroke="currentColor" stroke-width="0.6"/>
+          <text x="75" y="50" text-anchor="middle" font-family="Spectral, Georgia, serif" font-style="italic" font-size="23" fill="currentColor">Ex-libris</text>
+          <path d="M52 61h46" stroke="currentColor" stroke-width="0.8"/>
+          <circle cx="75" cy="61" r="2" fill="currentColor"/>
+        </svg>
+        <span class="marque__nom" id="nom-bibliotheque">Ma bibliothèque</span>
+      </a>
+      <div class="nav__liens" id="nav-liens"></div>
+      <p class="nav__compte" id="nav-compte"></p>
+    </nav>
+
+    <div class="principal">
+      <header class="comptoir">
+        <form class="comptoir__scan" data-form="comptoir" role="search" autocomplete="off">
+          <svg class="comptoir__icone" viewBox="0 0 28 20" aria-hidden="true"><g fill="currentColor"><rect width="2" height="20"/><rect x="3.5" width="1" height="20"/><rect x="6" width="2.5" height="20"/><rect x="10" width="1" height="20"/><rect x="12.5" width="1.5" height="20"/><rect x="15.5" width="3" height="20"/><rect x="20" width="1" height="20"/><rect x="22.5" width="2" height="20"/><rect x="26" width="2" height="20"/></g></svg>
+          <input name="q" type="search" placeholder="Scanne un livre, ou cherche un titre, un auteur…" aria-label="Scanner un livre ou chercher dans la bibliothèque" spellcheck="false">
+        </form>
+        <div class="etat-sauvegarde" id="etat-sauvegarde" aria-live="polite"></div>
+      </header>
+      <main id="vue" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div class="voile" id="voile" data-action="fermer-fiche" hidden></div>
+  <aside class="tiroir" id="tiroir" role="dialog" aria-modal="true" aria-label="Fiche du livre" hidden></aside>
+  <div class="toasts" id="toasts"></div>
+  <div id="listes" hidden></div>
+
+  <script src="js/outils.js"></script>
+  <script src="js/icones.js"></script>
+  <script src="js/isbn.js"></script>
+  <script src="js/donnees.js"></script>
+  <script src="js/catalogues.js"></script>
+  <script src="js/couverture.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/sauvegarde.js"></script>
+  <script src="js/fiche.js"></script>
+  <script src="js/vues/accueil.js"></script>
+  <script src="js/vues/ajouter.js"></script>
+  <script src="js/vues/etageres.js"></script>
+  <script src="js/vues/lecture.js"></script>
+  <script src="js/vues/series.js"></script>
+  <script src="js/vues/envies.js"></script>
+  <script src="js/vues/sauvegarde.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

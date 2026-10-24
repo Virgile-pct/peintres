@@ -1,0 +1,17 @@
+{
+  "name": "Ex-libris de poche",
+  "short_name": "Ex-libris",
+  "description": "Savoir en librairie si un livre est déjà à la maison.",
+  "lang": "fr",
+  "start_url": "./poche.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ECEFE8",
+  "theme_color": "#1D352C",
+  "icons": [
+    { "src": "icones/poche-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/poche-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/poche-512-masquable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#1D352C">
+  <title>Ex-libris de poche</title>
+  <meta name="description" content="Savoir en librairie si un livre est déjà à la maison.">
+  <link rel="manifest" href="manifest-poche.webmanifest">
+  <link rel="icon" href="icones/poche-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icones/poche-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/poche.css">
+</head>
+<body class="poche">
+  <svg class="filtres-svg" aria-hidden="true" focusable="false" width="0" height="0">
+    <filter id="encre" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="bruit"/>
+      <feDisplacementMap in="SourceGraphic" in2="bruit" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <header class="poche-haut">
+    <span class="poche-haut__marque">Ex-libris</span>
+    <span class="poche-haut__liste" id="poche-fraicheur"></span>
+  </header>
+
+  <main class="poche-vue" id="poche-vue" tabindex="-1"></main>
+
+  <nav class="poche-onglets" aria-label="Sections">
+    <button type="button" data-action="onglet" data-valeur="scanner"><svg viewBox="0 0 24 24" aria-hidden="true" class="icone"><path d="M4 5v14M7 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/></svg><span>Scanner</span></button>
+    <button type="button" data-action="onglet" data-valeur="liste"><svg viewBox="0 0 24 24" aria-hidden="true" class="icone"><path d="M6.5 3h11v18l-5.5-4.2L6.5 21Z"/></svg><span>Ma liste</span></button>
+    <button type="button" data-action="onglet" data-valeur="maj"><svg viewBox="0 0 24 24" aria-hidden="true" class="icone"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/></svg><span>Mettre à jour</span></button>
+  </nav>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="js/outils.js"></script>
+  <script src="js/icones.js"></script>
+  <script src="js/isbn.js"></script>
+  <script src="js/catalogues.js"></script>
+  <script src="js/couverture.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/poche.js"></script>
+</body>
+</html>

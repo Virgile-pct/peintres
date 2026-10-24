@@ -1,0 +1,128 @@
+/*
+ * Ex-libris de poche : la version téléphone.
+ * Reprend les jetons et composants de app.css ; ici seulement la mise en page à une main.
+ */
+
+body.poche { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+
+.poche-haut {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
+  background: var(--vert-fonce); color: #CBD8CF;
+}
+.poche-haut__marque { font-family: var(--serif); font-style: italic; font-size: var(--t-l); color: var(--laiton-clair); }
+.poche-haut__liste { font-size: var(--t-xs); text-align: right; }
+.poche-haut__liste--vieille { color: var(--laiton-clair); font-weight: 700; }
+
+.poche-vue { max-width: 560px; margin: 0 auto; padding: 20px 16px 32px; outline: none; }
+.poche-vue h1 { font-size: var(--t-xl); margin-bottom: 18px; }
+.poche-vue h2 { font-size: var(--t-l); }
+
+.poche-gros { width: 100%; min-height: 64px; margin-top: 16px; font-size: var(--t-l); border-radius: 12px; }
+.poche-invite { margin: 4px 0 0; color: var(--encre-douce); font-family: var(--serif); font-size: var(--t-l); line-height: 1.35; }
+.poche-accueil p { color: var(--encre-douce); font-size: var(--t-l); font-family: var(--serif); line-height: 1.4; }
+
+/* ---------- Onglets du bas ---------- */
+
+.poche-onglets {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  background: var(--surface); border-top: 1px solid var(--trait);
+}
+.poche-onglets button {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-height: 58px; padding: 6px 4px; border: 0; border-radius: 10px;
+  background: none; color: var(--encre-pale); font-size: var(--t-xs); cursor: pointer;
+  transition: color 0.3s var(--doux), background-color 0.3s var(--doux);
+}
+.poche-onglets .icone { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.poche-onglets button[aria-current="page"] { color: var(--vert-fonce); background: var(--vert-clair); font-weight: 700; }
+
+/* ---------- Caméra ---------- */
+
+.poche-camera { position: relative; margin-top: 4px; border-radius: 16px; overflow: hidden; background: var(--encre); }
+.poche-camera video { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.poche-camera__viseur { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 4 / 3; pointer-events: none; }
+/* Un cadre en largeur, à la forme d'un code-barres ; le reste de l'image est assombri. */
+.poche-camera__viseur::before {
+  content: ''; position: absolute; left: 12%; right: 12%; top: 32%; bottom: 32%;
+  border: 2.5px solid var(--laiton-clair); border-radius: 10px;
+  box-shadow: 0 0 0 999px rgba(10, 16, 13, 0.42);
+}
+.poche-camera__viseur::after {
+  content: ''; position: absolute; left: 15%; right: 15%; top: 50%; height: 2px;
+  background: var(--laiton); border-radius: 1px;
+  animation: lecture 1.6s var(--doux) infinite alternate;
+}
+@keyframes lecture { from { opacity: 0.25; transform: scaleX(0.6); } to { opacity: 1; transform: scaleX(1); } }
+.poche-camera__commandes { display: flex; justify-content: center; gap: 10px; padding: 12px; }
+.poche-camera__commandes .bouton { color: #fff; border-color: rgba(255, 255, 255, 0.6); min-width: 120px; }
+.poche-camera__commandes .bouton:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.poche-camera__commandes .bouton[aria-pressed="true"] { background: var(--laiton); border-color: var(--laiton); color: #1F1608; }
+
+/* ---------- Verdict ---------- */
+
+.verdict { padding: 22px 20px; border-radius: 16px; border: 2px solid transparent; animation: verdict 0.5s var(--doux) both; }
+.verdict > * + * { margin-top: 16px; }
+@keyframes verdict { from { opacity: 0; transform: translateY(10px); } }
+.verdict--deja { background: var(--violet-clair); border-color: var(--violet); }
+.verdict--absent { background: #E1EEE4; border-color: var(--vert); }
+.verdict--doute { background: #F6EEDB; border-color: var(--laiton); }
+.verdict--illisible { background: var(--surface); border-color: var(--trait); }
+.verdict--illisible p { margin-top: 8px; color: var(--encre-douce); }
+.verdict .tampon { font-size: 1.4rem; padding: 7px 16px; margin: 2px 0 0 4px; max-width: calc(100% - 12px); }
+.verdict .tampon + * { margin-top: 24px; }
+.tampon--vert { color: var(--vert); border-color: var(--vert); }
+.tampon--ambre { color: #7A5418; border-color: #7A5418; }
+
+.verdict__livre { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; }
+.verdict__livre h2 { font-size: var(--t-l); font-weight: 600; line-height: 1.25; }
+.verdict__auteurs { margin: 4px 0 0; font-weight: 700; }
+.verdict__meta { margin: 4px 0 0; font-size: var(--t-s); color: var(--encre-douce); }
+.verdict__faits { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.verdict__faits li { padding: 10px 14px; border-radius: 10px; background: rgba(255, 255, 255, 0.6); color: var(--violet); font-weight: 700; }
+.verdict__faits li:first-child { font-size: var(--t-l); }
+.verdict__alerte { padding: 12px 14px; border-radius: 10px; background: rgba(255, 255, 255, 0.65); line-height: 1.45; }
+.verdict__alerte ul { margin: 8px 0 0; padding-left: 18px; }
+.verdict__alerte--attention { background: #FFF7E6; color: #5C4416; }
+.verdict__alerte--envie, .verdict__alerte--bon { background: #FFFDF6; color: var(--vert-fonce); border-left: 4px solid var(--laiton); }
+.verdict__attente { display: flex; align-items: center; gap: 10px; color: var(--encre-douce); font-size: var(--t-s); }
+.point-attente { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--vert); animation: attente 0.9s var(--doux) infinite alternate; }
+@keyframes attente { from { opacity: 0.25; transform: scale(0.7); } }
+
+/* ---------- Recherche sans code-barres ---------- */
+
+.poche-recherche { margin-top: 32px; display: flex; flex-direction: column; gap: 8px; }
+.poche-recherche label { font-weight: 700; color: var(--encre-douce); }
+.poche-trouves, .poche-envies, .poche-tomes { list-style: none; padding: 0; margin: 12px 0 0; }
+.poche-trouves li, .poche-envies li { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--trait-doux); }
+.poche-trouves strong, .poche-envies strong { display: block; font-family: var(--serif); font-size: var(--t-m); font-weight: 600; line-height: 1.25; }
+.poche-trouves span, .poche-envies span { display: block; font-size: var(--t-s); color: var(--encre-douce); }
+.poche-trouves small, .poche-envies small { display: block; color: var(--violet); font-weight: 700; }
+.poche-trouves__compte { margin: 14px 0 0; font-size: var(--t-s); color: var(--encre-pale); }
+.poche-trouves__rien { margin-top: 12px; color: var(--encre-pale); }
+#poche-trouves > .bouton { margin-top: 12px; }
+
+/* ---------- Ma liste, Mise à jour ---------- */
+
+.poche-section { margin-top: 28px; }
+.poche-section h2 { margin-bottom: 4px; }
+.poche-tomes li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--trait-doux); }
+.poche-tomes strong { font-family: var(--serif); font-weight: 600; }
+.poche-tomes span { color: var(--alerte); font-weight: 700; text-align: right; }
+
+.maj__etat { padding: 16px 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--trait-doux); }
+.maj__etat p { margin: 0; }
+.maj__etat p + p { margin-top: 6px; font-size: var(--t-s); color: var(--encre-douce); }
+.maj__etat--vieille { background: var(--laiton-clair); border-color: var(--laiton); }
+.etapes--poche { margin: 24px 0 8px; }
+.etapes--poche li { grid-template-columns: 34px 1fr; }
+.etapes--poche li::before { width: 34px; height: 34px; font-size: var(--t-m); }
+.poche-installer { width: 100%; margin-top: 12px; }
+.poche-vue > .section__aide { margin-top: 20px; }
+.poche-vue > .bouton--discret { margin-top: 12px; padding: 0; }
+
+.poche .toasts { bottom: calc(88px + env(safe-area-inset-bottom)); }
+.poche .toast { max-width: calc(100vw - 32px); }

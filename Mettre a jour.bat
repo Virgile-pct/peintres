@@ -20,6 +20,8 @@ if exist ".git" (
   echo Publication en ligne...
   git add -A
   git commit -m "Mise a jour des fiches" 2>nul
+  REM Le depot heberge aussi Ex-libris (docs\ex-libris) : on recupere ses changements avant d'envoyer.
+  git pull --rebase --autostash
   git push
   echo.
   echo Termine ! Le site en ligne sera a jour dans une minute.

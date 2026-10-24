@@ -7,6 +7,8 @@ python generate.py >> "%~dp0maj.log" 2>&1
 if exist ".git" (
   git add -A >> "%~dp0maj.log" 2>&1
   git commit -m "Mise a jour auto des fiches" >> "%~dp0maj.log" 2>&1
+  REM Le depot heberge aussi Ex-libris (docs\ex-libris) : on recupere ses changements avant d'envoyer.
+  git pull --rebase --autostash >> "%~dp0maj.log" 2>&1
   git push >> "%~dp0maj.log" 2>&1
 )
 echo Termine : %DATE% %TIME% >> "%~dp0maj.log"
