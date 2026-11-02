@@ -41,11 +41,30 @@
         return mots.every((m) => texte.includes(m));
       });
     }
-    if (p.genre) liste = liste.filter((l) => l.genre === p.genre);
+    if (p.genre) liste = liste.filter((l) => (p.genre === '__aucun' ? !l.genre : l.genre === p.genre));
     if (p.statut === 'dedicaces') liste = liste.filter((l) => l.dedicace);
     else if (p.statut && p.statut !== 'retires') liste = liste.filter((l) => (l.statut || 'aucun') === p.statut);
     if (p.piece) liste = liste.filter((l) => (p.piece === PAS_RANGES ? !l.piece && !l.rangement : l.piece === p.piece));
+    // Filtres posés depuis la vue d'ensemble (une étagère, un auteur, une décennie, un éditeur).
+    if (p.rangement) liste = liste.filter((l) => l.rangement === p.rangement);
+    if (p.auteur) liste = liste.filter((l) => (l.auteurs || []).includes(p.auteur));
+    if (p.decennie) liste = liste.filter((l) => decennie(l) === p.decennie);
+    if (p.editeur) liste = liste.filter((l) => l.editeur === p.editeur);
     return liste.sort(ORDRES[p.tri] || ORDRES.auteur);
+  }
+
+  const decennie = (l) => (/^\d{4}/.test(l.annee || '') ? `${String(l.annee).slice(0, 3)}0` : '');
+
+  // Rappel du filtre venu de la vue d'ensemble, avec de quoi l'enlever.
+  function filtreEnsemble(p) {
+    const libelle = p.rangement ? `Étagère : ${p.rangement}`
+      : p.auteur ? `Auteur : ${p.auteur}`
+      : p.decennie ? `Parus dans les années ${p.decennie}`
+      : p.editeur ? `Éditeur : ${p.editeur}` : '';
+    if (!libelle) return '';
+    return `<p class="filtre-ensemble"><span>${esc(libelle)}</span>
+      <button type="button" class="lien" data-action="effacer-filtres">Tout afficher</button>
+      <a href="#/ensemble">Revenir à la vue d'ensemble</a></p>`;
   }
 
   const options = (liste, choisi) =>
@@ -68,17 +87,18 @@
       <div class="filtres">
         <label class="filtres__recherche">${Bib.icones.chercher}
           <input type="search" data-input="filtre-texte" value="${esc(p.q || '')}" placeholder="Titre, auteur, série, ISBN…" aria-label="Chercher dans la bibliothèque" spellcheck="false"></label>
-        <select class="saisie" data-change="filtre" data-cle="genre" aria-label="Genre">${options([['', 'Tous les genres'], ...genres], p.genre)}</select>
+        <select class="saisie" data-change="filtre" data-cle="genre" aria-label="Genre">${options([['', 'Tous les genres'], ...genres, ['__aucun', 'Sans genre']], p.genre)}</select>
         <select class="saisie" data-change="filtre" data-cle="statut" aria-label="Lecture">${options(FILTRES_STATUT, p.statut)}</select>
         <select class="saisie" data-change="filtre" data-cle="piece" aria-label="Pièce">${options([['', 'Toutes les pièces'], ...pieces, [PAS_RANGES, 'Pas encore rangés']], p.piece)}</select>
         ${vue === 'liste' ? '' : `<select class="saisie" data-change="filtre" data-cle="tri" aria-label="Ordre">${options(Object.entries(TRIS), p.tri || 'auteur')}</select>`}
       </div>
+      ${filtreEnsemble(p)}
       <div id="resultats-etageres">${rendreResultats(p)}</div>`;
   }
 
   function compte(p) {
     const total = D.presents().length;
-    const filtre = p.q || p.genre || p.statut || p.piece;
+    const filtre = p.q || p.genre || p.statut || p.piece || p.rangement || p.auteur || p.decennie || p.editeur;
     if (!filtre) return `${pluriel(total, 'livre', 'livres')} dans la bibliothèque.`;
     const n = filtrer(p).length;
     return `${pluriel(n, 'livre trouvé', 'livres trouvés')} sur ${pluriel(total, 'livre', 'livres')}.`;

@@ -101,6 +101,15 @@
     return l;
   }
 
+  // Mise à jour groupée (couvertures retrouvées…) : une seule écriture et un seul nouveau rendu.
+  async function enregistrerPlusieurs(livres) {
+    if (!livres.length) return;
+    const maintenant = new Date().toISOString();
+    livres.forEach((l) => { l.dateModif = maintenant; });
+    await mettrePlusieurs('livres', livres);
+    prevenir('livres');
+  }
+
   async function supprimerLivre(l, { silencieux = false } = {}) {
     await enlever('livres', l.id);
     etat.livres = etat.livres.filter((x) => x.id !== l.id);
@@ -199,7 +208,7 @@
 
   Bib.donnees = {
     etat, charger, abonner, presents, livre, emplacement, nouveauLivre,
-    enregistrerLivre, supprimerLivre, enregistrerEnvie, supprimerEnvie, reglage, journaliser,
+    enregistrerLivre, enregistrerPlusieurs, supprimerLivre, enregistrerEnvie, supprimerEnvie, reglage, journaliser,
     parIsbn, autresEditions, envieCorrespondante, cleOeuvre, emplacements, pieces, rangements, genres, fusionner,
   };
 })();

@@ -550,6 +550,57 @@ select.saisie { cursor: pointer; }
 .etapes li::before { content: counter(etape); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--vert); color: var(--vert); font-family: var(--serif); font-size: var(--t-l); }
 .accueil-vide__restaurer { margin-top: 24px; font-size: var(--t-s) !important; }
 
+/* ---------- Vue d'ensemble ---------- */
+
+.tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.tuile { display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; background: var(--surface); border: 1px solid var(--trait-doux); border-radius: 12px; }
+.tuile__grand { font-family: var(--serif); font-size: var(--t-xl); line-height: 1.1; color: var(--vert-fonce); font-variant-numeric: tabular-nums; }
+.tuile__petit { font-size: var(--t-s); color: var(--encre-douce); line-height: 1.4; }
+
+.bloc--plan { margin-bottom: 24px; }
+.bloc__note--haut { margin: -6px 0 22px; }
+.plan__piece + .plan__piece { margin-top: 28px; }
+.plan__piece h3 { margin-bottom: 14px; }
+.plan__meubles { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 28px 32px; }
+.meuble { margin: 0; }
+.meuble figcaption { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.meuble figcaption strong { font-family: var(--serif); font-size: var(--t-l); font-weight: 500; }
+.meuble figcaption span { font-size: var(--t-s); color: var(--encre-pale); white-space: nowrap; }
+.meuble svg { display: block; width: 100%; height: auto; }
+.plan__montant, .plan__planche { fill: var(--bois-clair); }
+.plan__survol { fill: transparent; transition: fill 0.4s var(--doux); }
+.plan__rang:hover .plan__survol, .plan__rang:focus-visible .plan__survol { fill: var(--laiton-clair); }
+.plan__rang:focus-visible { outline: none; }
+.plan__numero, .plan__compte { font: 400 11px var(--sans); fill: var(--encre-pale); }
+.plan__rang:hover .plan__compte { fill: var(--encre); }
+
+.ensemble-grille { margin-bottom: 24px; }
+.barre--lien { color: inherit; text-decoration: none; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; transition: background 0.4s var(--doux); }
+.barre--lien:hover, .barre--lien:focus-visible { background: var(--papier-fonce); color: var(--vert-fonce); }
+.barres li { list-style: none; }
+
+.frise { display: block; width: 100%; height: auto; max-height: 220px; }
+.frise__fond { fill: transparent; transition: fill 0.4s var(--doux); }
+.frise__col:hover .frise__fond { fill: var(--papier-fonce); }
+.frise__barre { fill: var(--vert); transition: fill 0.4s var(--doux); }
+.frise__col:hover .frise__barre { fill: var(--laiton); }
+.frise__nombre { font: 400 10px var(--sans); fill: var(--encre-douce); }
+.frise__annee { font: 400 10px var(--sans); fill: var(--encre-pale); }
+
+.couv-recherche { max-width: 72ch; }
+.couv-recherche__apercu { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 18px; }
+.couv-recherche__livre { background: none; border: 0; padding: 0; cursor: pointer; }
+.couv-recherche__actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.genres-proposes { margin-top: 18px; }
+.genres-proposes summary { cursor: pointer; color: var(--vert); font-weight: 700; }
+.genres-proposes .bloc__note { margin-top: 10px; }
+.genres-proposes__liste { list-style: none; padding: 0; margin: 8px 0 16px; max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.genres-proposes__liste small { display: block; color: var(--encre-pale); font-size: var(--t-xs); }
+
+.filtre-ensemble { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px; margin: -12px 0 24px; padding: 10px 16px; border-radius: 10px; background: var(--vert-clair); color: var(--vert-fonce); }
+.filtre-ensemble span { font-weight: 700; }
+
 /* ---------- Ma lecture ---------- */
 
 .tirage { display: grid; grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr); gap: 32px; padding: 32px; border-radius: 14px; background: var(--vert-fonce); color: #E3ECE6; }

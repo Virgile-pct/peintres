@@ -237,14 +237,41 @@
 
   const couvertureOpenLibrary = (isbn13) => `https://covers.openlibrary.org/b/isbn/${isbn13}-L.jpg?default=false`;
 
+  // Les images d'Amazon s'adressent par l'ISBN à 10 chiffres ; un livre inconnu renvoie une image d'un pixel.
+  // Sur un échantillon de la bibliothèque, elles couvrent 4 livres sur 5 qu'Open Library n'a pas.
+  const couvertureAmazon = (isbn13) => {
+    const isbn10 = Bib.isbn.versIsbn10(isbn13);
+    return isbn10 ? `https://images-na.ssl-images-amazon.com/images/P/${isbn10}.01.LZZZZZZZ.jpg` : '';
+  };
+
   async function meilleureCouverture(isbn13, fiches, essaiOpenLibrary) {
     const urlOl = couvertureOpenLibrary(isbn13);
     if (await (essaiOpenLibrary || imageValide(urlOl, 5000))) return urlOl;
-    const autres = [...new Set(fiches.map((f) => f && f.couverture).filter((u) => u && u !== urlOl))];
+    const autres = [...new Set([...fiches.map((f) => f && f.couverture), couvertureAmazon(isbn13)].filter((u) => u && u !== urlOl))];
     for (const url of autres) {
       if (await imageValide(url, 5000)) return url;
     }
     return '';
+  }
+
+  // Dernier recours sans ISBN exploitable : la couverture d'une édition trouvée par titre et auteur.
+  async function couvertureParTitre(titre, auteur) {
+    if (!titre) return '';
+    const q = new URLSearchParams({ title: titre, author: auteur || '', limit: '3', fields: 'cover_i' });
+    const d = await recuperer(`https://openlibrary.org/search.json?${q}`);
+    const doc = (d.docs || []).find((x) => x.cover_i);
+    if (!doc) return '';
+    const url = `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`;
+    return (await imageValide(url, 6000)) ? url : '';
+  }
+
+  /** Cherche une couverture pour un livre déjà enregistré qui n'en a pas. */
+  async function retrouverCouverture(l) {
+    if (l.isbn) {
+      const url = await meilleureCouverture(l.isbn, []);
+      if (url) return url;
+    }
+    return couvertureParTitre(l.titre, (l.auteurs || [])[0]).catch(() => '');
   }
 
   // ---------- Recherche combinée ----------
@@ -280,5 +307,5 @@
     return { fiche };
   }
 
-  Bib.catalogues = { chercherParIsbn, chercherParTitre, meilleureCouverture, GENRES_CONNUS };
+  Bib.catalogues = { chercherParIsbn, chercherParTitre, meilleureCouverture, retrouverCouverture, GENRES_CONNUS };
 })();
