@@ -57,6 +57,15 @@
     return `${sept.slice(0, 4)}-${sept.slice(4)}${r === 10 ? 'X' : r}`;
   }
 
+  // Le petit code de droite d'un magazine : 2 chiffres (numéro), ou 5 (numéro sur 4 et une marque :
+  // 5 pour un hors-série, 6 pour un numéro spécial).
+  function numeroParution(supplement) {
+    if (!supplement) return '';
+    if (supplement.length === 2) return String(Number(supplement));
+    const marque = { 5: ' hors-série', 6: ' spécial' }[supplement[4]] || '';
+    return String(Number(supplement.slice(0, 4))) + marque;
+  }
+
   /** Dit ce qu'est une saisie (douchette, webcam ou clavier). */
   function analyser(saisie) {
     let c = chiffres(saisie);
@@ -70,7 +79,12 @@
     if (c.length === 10 && isbn10Valide(c)) return { type: 'isbn', isbn: versIsbn13(c), isbn10: c };
     if (c.length === 13 && ean13Valide(c)) {
       if (/^97[89]/.test(c)) return { type: 'isbn', isbn: c, isbn10: versIsbn10(c) };
-      if (c.startsWith('977')) return { type: 'revue', ean: c, issn: issnDeEan(c), numero: supplement ? String(Number(supplement)) : '' };
+      if (c.startsWith('977')) return { type: 'revue', ean: c, cleTitre: c.slice(0, 10), issn: issnDeEan(c), numero: numeroParution(supplement) };
+      // Presse vendue en kiosque : 378 (grande diffusion) ou 379 (publications en série),
+      // puis le code titre sur 5 chiffres et le prix en centimes sur 4 chiffres.
+      if (/^37[89]/.test(c)) {
+        return { type: 'revue', ean: c, cleTitre: c.slice(0, 8), codePresse: c.slice(3, 8), prix: Number(c.slice(8, 12)) / 100, numero: numeroParution(supplement) };
+      }
       return { type: 'ean', ean: c };
     }
     return { type: 'invalide', brut: c };

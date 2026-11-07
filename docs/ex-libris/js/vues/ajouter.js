@@ -202,21 +202,29 @@
   // Le code-barres d'un magazine est le même pour tous ses numéros : chaque numéro devient le « tome »
   // d'une série qui porte le nom du magazine, et l'anti-doublon se fait sur le numéro.
 
-  const memeRevue = (l, code, nom) => l.isbn === code || (nom && l.serie && Bib.outils.cle(l.serie) === Bib.outils.cle(nom));
-  const numerosDeRevue = (code, nom) =>
-    D.presents().filter((l) => memeRevue(l, code, nom)).sort((a, b) => Bib.outils.comparer(a.tome, b.tome));
+  // Même magazine : même début de code-barres (ISSN, ou code titre de la presse en kiosque), ou même nom.
+  const memeRevue = (l, cleTitre, nom) =>
+    (l.isbn && l.isbn.startsWith(cleTitre)) || (nom && l.serie && Bib.outils.cle(l.serie) === Bib.outils.cle(nom));
+  const numerosDeRevue = (cleTitre, nom) =>
+    D.presents().filter((l) => memeRevue(l, cleTitre, nom)).sort((a, b) => Bib.outils.comparer(a.tome, b.tome));
+  // Un magazine de kiosque déjà ajouté une fois : on reprend son nom et son éditeur.
+  const revueConnue = (cleTitre) => D.etat.livres.find((l) => l.genre === 'Magazine' && l.isbn && l.isbn.startsWith(cleTitre) && l.serie);
 
   function rendreRevue(r) {
     const nom = r.revue ? r.revue.titre : '';
-    const deja = numerosDeRevue(r.code, nom);
+    const deja = numerosDeRevue(r.cleTitre, nom);
     const numeros = deja.map((l) => l.tome).filter(Boolean);
     const sansNumero = deja.length - numeros.length;
     const recap = [numeros.length ? `n° ${numeros.join(', ')}` : '', sansNumero ? pluriel(sansNumero, 'sans numéro', 'sans numéro') : ''].filter(Boolean).join(', et ');
     return `<div class="resultat resultat--manuel resultat--revue">
       <h3>${nom ? `Magazine : ${esc(nom)}` : 'Un magazine'}</h3>
-      <p>${nom
-        ? `${esc([r.revue.editeur, `ISSN ${r.issn}`].filter(Boolean).join(', '))}. Le code-barres d'un magazine est le même à chaque numéro : indique lequel tu as en main.`
-        : `Ni la BnF ni le Sudoc ne connaissent ce magazine (ISSN ${esc(r.issn)}). Indique son nom et son numéro.`}</p>
+      <p>${r.codePresse
+        ? (nom
+          ? `Magazine de kiosque déjà rencontré${r.revue.editeur ? ` (${esc(r.revue.editeur)})` : ''}. Indique le numéro que tu as en main.`
+          : `Magazine vendu en kiosque${r.prix ? `, ${esc(euros(r.prix))}` : ''}. Son code (presse ${esc(r.codePresse)}) n'est dans aucun catalogue public : indique son nom une fois, Ex-libris le reconnaîtra aux numéros suivants.`)
+        : nom
+          ? `${esc([r.revue.editeur, `ISSN ${r.issn}`].filter(Boolean).join(', '))}. Le code-barres d'un magazine est le même à chaque numéro : indique lequel tu as en main.`
+          : `Ni la BnF ni le Sudoc ne connaissent ce magazine (ISSN ${esc(r.issn)}). Indique son nom et son numéro.`}</p>
       ${deja.length ? `<p class="resultat__message">Tu en as déjà ${pluriel(deja.length, 'numéro', 'numéros')} : ${esc(recap)}.</p>` : ''}
       <form class="grille-champs" data-form="revue" autocomplete="off">
         <label class="champ champ--large"><span>Magazine</span><input class="saisie" name="revue" required value="${esc(nom)}"></label>
@@ -444,12 +452,17 @@
       etat.recherche = a.ean;
       majResultat();
       let revue = null;
-      try {
-        revue = await Bib.catalogues.chercherRevue(a.issn);
-      } finally {
-        etat.recherche = null;
+      const connue = revueConnue(a.cleTitre);
+      if (connue) revue = { titre: connue.serie, editeur: connue.editeur, ark: connue.ark, source: connue.source };
+      else if (a.issn) {
+        try {
+          revue = await Bib.catalogues.chercherRevue(a.issn);
+        } finally {
+          etat.recherche = null;
+        }
       }
-      montrer({ type: 'revue', code: a.ean, issn: a.issn, numero: a.numero, revue });
+      etat.recherche = null;
+      montrer({ type: 'revue', code: a.ean, cleTitre: a.cleTitre, issn: a.issn, codePresse: a.codePresse, prix: a.prix, numero: a.numero, revue });
       const champ = document.querySelector(`[data-form="revue"] [name="${revue ? 'numero' : 'revue'}"]`);
       if (champ) champ.focus({ preventScroll: true });
       return;
@@ -635,12 +648,12 @@
       const nom = v('revue');
       const numero = v('numero').replace(/^n°\s*/i, '');
       const cle = Bib.outils.cle;
-      const present = numero && numerosDeRevue(r.code, nom).find((l) => cle(l.tome) === cle(numero));
+      const present = numero && numerosDeRevue(r.cleTitre, nom).find((l) => cle(l.tome) === cle(numero));
       if (present) return montrer({ type: 'deja', livre: present });
       const fiche = {
         titre: v('sujet') || `${nom}${numero ? ` n° ${numero}` : ''}`,
         sousTitre: v('sujet') ? `${nom}${numero ? ` n° ${numero}` : ''}` : '',
-        serie: nom, tome: numero, annee: v('annee'), genre: 'Magazine', isbn: r.code,
+        serie: nom, tome: numero, annee: v('annee'), genre: 'Magazine', isbn: r.code, prix: r.prix || null,
         editeur: r.revue ? r.revue.editeur : '', ark: r.revue ? r.revue.ark : '', source: r.revue ? r.revue.source : 'manuel',
       };
       const l = await ajouterLivre(fiche, null);
