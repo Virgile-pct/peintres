@@ -32,9 +32,9 @@
         { nom: 'Au-dessus de la vitrine', mur: 'fond', s: 315, bas: 195, largeur: 85, hauteur: 65, profondeur: 35, etageres: 2 },
         { nom: 'Vitrine', mur: 'fond', s: 315, bas: 95, largeur: 85, hauteur: 100, profondeur: 35, vitrine: true },
         { nom: 'Sous la vitrine', mur: 'fond', s: 315, largeur: 85, hauteur: 95, profondeur: 35, etageres: 2 },
-        { nom: 'Bibliothèque basse gauche', mur: 'droite', s: 10, largeur: 70, hauteur: 115, profondeur: 32, etageres: 4 },
-        { nom: 'Bibliothèque basse milieu', mur: 'droite', s: 80, largeur: 70, hauteur: 115, profondeur: 32, etageres: 4 },
-        { nom: 'Bibliothèque basse droite', mur: 'droite', s: 150, largeur: 70, hauteur: 115, profondeur: 32, etageres: 4 },
+        { nom: 'Bibliothèque basse gauche', mur: 'droite', s: 10, largeur: 70, hauteur: 115, profondeur: 32, etageres: 3 },
+        { nom: 'Bibliothèque basse milieu', mur: 'droite', s: 80, largeur: 70, hauteur: 115, profondeur: 32, etageres: 3 },
+        { nom: 'Bibliothèque basse droite', mur: 'droite', s: 150, largeur: 70, hauteur: 115, profondeur: 32, etageres: 3 },
       ],
     },
   };
