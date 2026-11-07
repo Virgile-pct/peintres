@@ -51,18 +51,12 @@
 
   // ---------- Plan des meubles ----------
 
-  // « Grande bibliothèque gauche, étagère 6 » → meuble « Grande bibliothèque gauche », étagère 6.
-  function decouper(rangement) {
-    const m = String(rangement || '').match(/^(.*?),?\s*(?:étagère|etagere|rayon|planche)\s*(\d+)\s*$/i);
-    return m ? { meuble: m[1].trim() || rangement, numero: Number(m[2]) } : { meuble: rangement || 'Sans meuble', numero: 0 };
-  }
-
   function plan(livres) {
     const pieces = new Map();
     for (const l of livres) {
       if (!l.piece && !l.rangement) continue;
       const piece = l.piece || 'Sans pièce';
-      const { meuble, numero } = decouper(l.rangement);
+      const { meuble, numero } = Bib.outils.decouperRangement(l.rangement);
       if (!pieces.has(piece)) pieces.set(piece, new Map());
       const meubles = pieces.get(piece);
       if (!meubles.has(meuble)) meubles.set(meuble, new Map());
@@ -328,7 +322,7 @@
 
       <section class="bloc bloc--plan">
         <h2>Les meubles, étagère par étagère</h2>
-        <p class="bloc__note bloc__note--haut">Chaque trait est un livre, dans l'ordre où il a été scanné, avec l'épaisseur de son nombre de pages et la couleur de sa couverture dessinée.</p>
+        <p class="bloc__note bloc__note--haut"><a href="#/salle">Voir la pièce en 3D</a>. Chaque trait est un livre, dans l'ordre où il a été scanné, avec l'épaisseur de son nombre de pages et la couleur de sa couverture dessinée.</p>
         ${rendrePlan(livres)}
       </section>
 

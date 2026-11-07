@@ -7,6 +7,7 @@
   Bib.icones = {
     accueil: trait('<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9v12h13V9"/><path d="M10 21v-6h4v6"/>'),
     ensemble: trait('<rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><path d="M14 21v-4M17.2 21v-6.5M20.4 21v-3"/>'),
+    salle: trait('<path d="M12 3 3 7.5v9L12 21l9-4.5v-9Z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/><path d="M6 10.5v6M8.5 11.8v6"/>'),
     ajouter: trait('<path d="M4 5v14M7 5v14M10.5 5v14M14 5v14M17 5v14M20 5v14"/>'),
     etageres: trait('<path d="M3 21h18M3 3h18"/><rect x="5" y="7" width="3" height="14"/><rect x="9" y="5.5" width="3" height="15.5"/><path d="m14.2 8.6 2.9-.8 3.6 13.4-2.9.8z"/>'),
     lecture: trait('<path d="M12 6.5C10 5 7 4.5 3 5v13.5c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5Z"/><path d="M12 6.5V20"/>'),

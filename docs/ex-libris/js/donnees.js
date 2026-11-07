@@ -201,6 +201,13 @@
     for (const [nom, valeur] of Object.entries(sauvegarde.reglages || {})) {
       if (etat.reglages[nom] === undefined) await reglage(nom, valeur, { discret: true });
     }
+    // Les étagères prévues s'additionnent : celles qui manquent sont ajoutées à la fin, dans l'ordre du fichier.
+    if (Array.isArray(sauvegarde.reglages && sauvegarde.reglages.emplacements)) {
+      const cleE = (e) => `${e.piece || ''}\u0000${e.rangement || ''}`;
+      const connues = new Set(emplacements().map(cleE));
+      const nouvelles = sauvegarde.reglages.emplacements.filter((e) => e && (e.piece || e.rangement) && !connues.has(cleE(e)));
+      if (nouvelles.length) await reglage('emplacements', [...emplacements(), ...nouvelles], { discret: true });
+    }
     await journaliser('import', null, `${livresAjoutes} livres ajoutés, ${livres.length - livresAjoutes} mis à jour`);
     prevenir('import');
     return { livresAjoutes, livresMisAJour: livres.length - livresAjoutes };

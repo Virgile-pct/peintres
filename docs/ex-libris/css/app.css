@@ -753,3 +753,20 @@ select.saisie { cursor: pointer; }
   .envie .couv { display: none; }
   .imprime-seulement h2 { font-size: 14pt; margin: 18pt 0 6pt; }
 }
+
+/* ---------- La pièce en 3D ---------- */
+.salle { display: flex; flex-direction: column; gap: 12px; }
+.salle__commandes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.salle__zoom { display: inline-flex; gap: 6px; margin-left: auto; }
+.salle__zoom .bouton { min-width: 44px; justify-content: center; font-size: var(--t-l); line-height: 1; }
+.salle__scene { position: relative; height: min(68vh, 640px); min-height: 340px; border-radius: 10px; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 35%, #F4EFE6 0%, #E3DACB 70%, #D6CBB8 100%); border: 1px solid var(--trait); }
+.salle__svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; }
+.salle__svg:active { cursor: grabbing; }
+.salle__rang { fill: transparent; cursor: pointer; transition: fill 0.25s var(--doux); }
+.salle__rang:hover { fill: rgba(232, 215, 174, 0.28); }
+.salle__rang--choisi, .salle__rang--choisi:hover { fill: rgba(232, 215, 174, 0.38); stroke: var(--laiton-clair); stroke-width: 0.8; }
+.salle__legende { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 44px; }
+.salle__legende p { margin: 0; }
+.salle__note { margin: 0; font-size: var(--t-s); color: var(--encre-pale); }
+.salle__note:empty { display: none; }

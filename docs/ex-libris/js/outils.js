@@ -137,8 +137,14 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
+  // « Grande bibliothèque gauche, étagère 6 » → meuble « Grande bibliothèque gauche », étagère 6.
+  function decouperRangement(rangement) {
+    const m = String(rangement || '').match(/^(.*?),?\s*(?:étagère|etagere|rayon|planche)\s*(\d+)\s*$/i);
+    return m ? { meuble: m[1].trim() || rangement, numero: Number(m[2]) } : { meuble: rangement || 'Sans meuble', numero: 0 };
+  }
+
   Bib.outils = {
-    esc, uid, sansAccents, cle, cleOeuvre, comparer, aujourdhui, dateLongue, moisAnnee, depuis, heure,
+    decouperRangement, esc, uid, sansAccents, cle, cleOeuvre, comparer, aujourdhui, dateLongue, moisAnnee, depuis, heure,
     nombre, euros, pluriel, enumerer, hash, debounce, toast, telecharger,
   };
 })();

@@ -9,7 +9,7 @@
   const D = Bib.donnees;
 
   const NAVIGATION = [
-    ['accueil', 'Accueil'], ['ensemble', "Vue d'ensemble"], ['ajouter', 'Ajouter des livres'], ['etageres', 'Mes étagères'],
+    ['accueil', 'Accueil'], ['ensemble', "Vue d'ensemble"], ['salle', 'La pièce en 3D'], ['ajouter', 'Ajouter des livres'], ['etageres', 'Mes étagères'],
     ['lecture', 'Ma lecture'], ['series', 'Séries'], ['envies', 'Envies'], ['sauvegarde', 'Sauvegarde'],
   ];
 
