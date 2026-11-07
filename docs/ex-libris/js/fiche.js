@@ -12,7 +12,7 @@
   const STATUTS = [['a-lire', 'À lire'], ['en-cours', 'En cours'], ['lu', 'Lu'], ['abandonne', 'Abandonné']];
   const LIBELLES_STATUT = Object.fromEntries(STATUTS);
   const MOTIFS = ['Donné', 'Vendu', 'Prêté sans retour', 'Perdu', 'Abîmé'];
-  const SOURCES = { bnf: 'Bibliothèque nationale de France', openlibrary: 'Open Library', google: 'Google Books', manuel: 'saisie à la main' };
+  const SOURCES = { bnf: 'Bibliothèque nationale de France', openlibrary: 'Open Library', google: 'Google Books', sudoc: 'Sudoc (bibliothèques universitaires)', manuel: 'saisie à la main' };
 
   let ouvertId = null;
   let retourFocus = null;

@@ -29,7 +29,7 @@
     'fiction': 'Roman', 'juvenile fiction': 'Jeunesse', 'comics & graphic novels': 'Bande dessinée', 'cooking': 'Cuisine et maison',
     'biography & autobiography': 'Biographie', 'history': 'Histoire', 'travel': 'Voyage', 'poetry': 'Poésie', 'drama': 'Théâtre',
   };
-  const GENRES_CONNUS = [...new Set([...Object.values(GENRES_BNF), ...GENRES_PAR_CENTAINE])].sort(Bib.outils.comparer);
+  const GENRES_CONNUS = [...new Set([...Object.values(GENRES_BNF), ...GENRES_PAR_CENTAINE, 'Magazine'])].sort(Bib.outils.comparer);
 
   async function recuperer(url, { delai = 12000, texte = false } = {}) {
     const controle = new AbortController();
@@ -176,6 +176,36 @@
     return fiches.sort((a, b) => score(a) - score(b) || (b.annee || '').localeCompare(a.annee || ''));
   }
 
+  // ---------- Revues et magazines (code en 977) ----------
+  // La BnF connaît les titres de presse par leur ISSN ; le Sudoc (bibliothèques universitaires) prend le relais.
+
+  function ficheRevue(notice, source) {
+    const f = ficheDepuisBnf(notice);
+    return { titre: f.titre, editeur: f.editeur, annee: f.annee, ark: f.ark, source };
+  }
+
+  async function chercherRevue(issn) {
+    try {
+      const notices = lireReponseSru(await recuperer(requeteSru(`bib.issn adj "${issn}"`, 3), { texte: true }));
+      if (notices.length) return ficheRevue(notices[0], 'bnf');
+    } catch (e) {
+      // on essaie le Sudoc
+    }
+    try {
+      const r = await recuperer(`https://www.sudoc.fr/services/issn2ppn/${issn}&format=text/json`);
+      const res = r && r.sudoc && r.sudoc.query && r.sudoc.query.result;
+      const ppn = Array.isArray(res) ? res[0] && res[0].ppn : res && res.ppn;
+      if (ppn) {
+        const xml = await recuperer(`https://www.sudoc.fr/${ppn}.xml`, { texte: true });
+        const notice = lireNotice(new DOMParser().parseFromString(xml, 'application/xml').documentElement);
+        return { ...ficheRevue(notice, 'sudoc'), ark: `https://www.sudoc.fr/${ppn}` };
+      }
+    } catch (e) {
+      // inconnu des deux catalogues, ou pas de réseau
+    }
+    return null;
+  }
+
   // ---------- Open Library ----------
 
   async function openLibrary(isbn13) {
@@ -307,5 +337,5 @@
     return { fiche };
   }
 
-  Bib.catalogues = { chercherParIsbn, chercherParTitre, meilleureCouverture, retrouverCouverture, GENRES_CONNUS };
+  Bib.catalogues = { chercherRevue, chercherParIsbn, chercherParTitre, meilleureCouverture, retrouverCouverture, GENRES_CONNUS };
 })();

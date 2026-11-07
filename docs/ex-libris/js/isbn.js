@@ -49,15 +49,28 @@
     return neuf + cleIsbn10(neuf);
   }
 
+  // Code d'un magazine : 977, les 7 premiers chiffres de son ISSN, 2 chiffres de variante, la clé.
+  function issnDeEan(ean) {
+    const sept = ean.slice(3, 10);
+    const somme = [...sept].reduce((s, d, i) => s + Number(d) * (8 - i), 0);
+    const r = (11 - (somme % 11)) % 11;
+    return `${sept.slice(0, 4)}-${sept.slice(4)}${r === 10 ? 'X' : r}`;
+  }
+
   /** Dit ce qu'est une saisie (douchette, webcam ou clavier). */
   function analyser(saisie) {
     let c = chiffres(saisie);
-    // Certaines douchettes lisent aussi le petit code prix collé à droite (EAN-13 + 2 ou + 5).
-    if (/^\d{15}$|^\d{18}$/.test(c)) c = c.slice(0, 13);
+    // Certaines douchettes lisent aussi le petit code collé à droite (EAN-13 + 2 ou + 5) :
+    // le prix pour un livre, le numéro pour un magazine.
+    let supplement = '';
+    if (/^\d{15}$|^\d{18}$/.test(c)) {
+      supplement = c.slice(13);
+      c = c.slice(0, 13);
+    }
     if (c.length === 10 && isbn10Valide(c)) return { type: 'isbn', isbn: versIsbn13(c), isbn10: c };
     if (c.length === 13 && ean13Valide(c)) {
       if (/^97[89]/.test(c)) return { type: 'isbn', isbn: c, isbn10: versIsbn10(c) };
-      if (c.startsWith('977')) return { type: 'revue', ean: c };
+      if (c.startsWith('977')) return { type: 'revue', ean: c, issn: issnDeEan(c), numero: supplement ? String(Number(supplement)) : '' };
       return { type: 'ean', ean: c };
     }
     return { type: 'invalide', brut: c };
@@ -66,5 +79,5 @@
   // Une saisie du comptoir est un code si elle n'est faite que de chiffres (et tirets, espaces).
   const ressembleACode = (s) => /^[\d\s-]+[\dXx]?$/.test(remettreChiffres(s)) && chiffres(s).length >= 10;
 
-  Bib.isbn = { analyser, chiffres, versIsbn10, versIsbn13, ean13Valide, ressembleACode };
+  Bib.isbn = { analyser, issnDeEan, chiffres, versIsbn10, versIsbn13, ean13Valide, ressembleACode };
 })();
