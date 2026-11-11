@@ -197,7 +197,7 @@
         pile.forEach((l, j) => {
           // La tranche d'un magazine : surtout du papier, avec la couleur de la couverture dessus.
           const y = r.y + r.h - (j + 1) * 0.5;
-          parts.push(`<rect x="${r1(x0 + 0.3)}" y="${r1(y)}" width="${r1(largeurPile - 0.8)}" height="0.46" fill="#E6DDCB"/><rect x="${r1(x0 + 0.3)}" y="${r1(y)}" width="${r1(largeurPile - 0.8)}" height="0.14" fill="${C.toile(l)[0]}"/>`);
+          parts.push(`<rect x="${r1(x0 + 0.3)}" y="${r1(y)}" width="${r1(largeurPile - 0.8)}" height="0.46" fill="#E6DDCB" class="salle__livre" data-id="${esc(l.id)}"/><rect x="${r1(x0 + 0.3)}" y="${r1(y)}" width="${r1(largeurPile - 0.8)}" height="0.14" fill="${C.toile(l)[0]}"/>`);
         });
       });
       const total = livres.reduce((s, l) => s + epaisseurCm(l), 0);
@@ -206,7 +206,7 @@
       for (const l of livres) {
         const lb = epaisseurCm(l) * echelle;
         const hb = Math.min(r.h - 0.6, l.genre === 'Magazine' ? 28 : Math.max(11, l.hauteur || 18));
-        parts.push(`<rect x="${r1(x)}" y="${r1(r.y + r.h - hb)}" width="${r1(Math.max(0.3, lb - 0.12))}" height="${r1(hb)}" fill="${C.toile(l)[0]}"/>`);
+        parts.push(`<rect class="salle__livre" data-id="${esc(l.id)}" x="${r1(x)}" y="${r1(r.y + r.h - hb)}" width="${r1(Math.max(0.3, lb - 0.12))}" height="${r1(hb)}" fill="${C.toile(l)[0]}"/>`);
         x += lb;
       }
       if (i < lignes.length - 1) {
@@ -490,15 +490,20 @@
   }
 
   // Se placer bien en face d'un meuble, assez près pour lire ses étagères.
-  function regarderMeuble(nomMeuble) {
+  // Avec un numéro d'étagère (0 = celle du haut), on s'approche de cette étagère-là.
+  function regarderMeuble(nomMeuble, etagere = -1) {
     const m = scene && scene.piece.meubles.find((x) => x.nom === nomMeuble);
     if (!m) return;
     const mur = murs(scene.piece)[m.mur];
     const bas = m.bas || 0;
-    const cible = add(add(add(mur.origine, mul(mur.u, m.s + m.largeur / 2)), mul(mur.n, m.profondeur)), mul(HAUT, bas + m.hauteur / 2));
+    const r = etagere >= 0 && !m.vitrine && !m.placard ? rangees(m)[etagere] : null;
+    const hauteur = r ? bas + m.hauteur - r.y - r.h / 2 : bas + m.hauteur / 2;
+    const cible = add(add(add(mur.origine, mul(mur.u, m.s + m.largeur / 2)), mul(mur.n, m.profondeur)), mul(HAUT, hauteur));
     const rect = scene.svg.getBoundingClientRect();
     const rapport = rect.width ? rect.height / rect.width : 0.62;
-    const zoom = Math.min(LARGEUR_VUE / (m.largeur * 2.4), (LARGEUR_VUE * rapport) / (m.hauteur * 1.25), 6);
+    const zoom = r
+      ? Math.min(LARGEUR_VUE / (m.largeur * 1.5), 8)
+      : Math.min(LARGEUR_VUE / (m.largeur * 2.4), (LARGEUR_VUE * rapport) / (m.hauteur * 1.25), 6);
     allerVers({ theta: THETA_MUR[m.mur], phi: 6, cible, zoom });
   }
 
@@ -571,6 +576,55 @@
     regarderMeuble(meuble);
   }
 
+  // ---------- Où est ce livre ? ----------
+
+  let livreCherche = ''; // identifiant du livre à montrer dès que la bonne pièce est dessinée
+
+  function resultatsRecherche(texte) {
+    const mots = Bib.outils.cle(texte).split(' ').filter(Boolean);
+    if (!mots.length) return '';
+    const trouves = D.presents().filter((l) => {
+      const t = Bib.outils.cle([l.titre, l.sousTitre, (l.auteurs || []).join(' '), l.serie, l.tome].join(' '));
+      return mots.every((m) => t.includes(m));
+    }).slice(0, 8);
+    if (!trouves.length) return '<p class="salle__note">Aucun livre ne correspond.</p>';
+    return `<ul class="salle__trouves">${trouves.map((l) => `<li><button type="button" class="lien-livre" data-action="salle-trouver" data-id="${esc(l.id)}">
+      <strong>${esc(l.titre)}</strong> <small>${esc([(l.auteurs || []).join(', '), D.emplacement(l) || 'pas encore rangé'].filter(Boolean).join(' · '))}</small></button></li>`).join('')}</ul>`;
+  }
+
+  function montrerLivre(id) {
+    const l = D.livre(id);
+    if (!l || !scene) return;
+    const zone = document.getElementById('salle-legende');
+    const { meuble, numero } = decouperRangement(l.rangement);
+    const m = scene.piece.meubles.find((x) => x.nom === meuble);
+    if (!l.rangement || !m) {
+      if (zone) zone.innerHTML = `<p><strong>${esc(l.titre)}</strong> n'est pas encore rangé sur un meuble de la pièce${l.rangement ? ` (noté : ${esc(D.emplacement(l))})` : ''}.</p>`;
+      return;
+    }
+    choisie = l.rangement;
+    scene.svg.querySelectorAll('.salle__rang--choisi, .salle__livre--trouve').forEach((el) => el.classList.remove('salle__rang--choisi', 'salle__livre--trouve'));
+    scene.svg.querySelectorAll('.salle__rang').forEach((el) => { if (el.dataset.rangement === choisie) el.classList.add('salle__rang--choisi'); });
+    scene.svg.querySelectorAll('.salle__livre').forEach((el) => { if (el.dataset.id === id) el.classList.add('salle__livre--trouve'); });
+    if (zone) {
+      zone.innerHTML = `<p><strong>${esc(l.titre)}</strong> est ici : ${esc(l.rangement)}, il clignote sur l'étagère.</p>
+        <button type="button" class="bouton bouton--second" data-action="fiche" data-id="${esc(l.id)}">Ouvrir sa fiche</button>
+        <button type="button" class="bouton bouton--discret" data-action="salle-vue" data-vue="piece">Revenir à toute la pièce</button>`;
+    }
+    regarderMeuble(meuble, Math.max(0, numero - 1));
+  }
+
+  function trouver(id) {
+    const l = D.livre(id);
+    if (!l) return;
+    if (PIECES[l.piece] && l.piece !== pieceAffichee()) {
+      pieceChoisie = l.piece;
+      livreCherche = id;
+      return Bib.app.afficher({ garderDefilement: true });
+    }
+    montrerLivre(id);
+  }
+
   // ---------- Écran ----------
 
   let pieceChoisie = ''; // la pièce choisie à l'écran ; sinon celle de l'inventaire en cours
@@ -589,7 +643,13 @@
     choisie = '';
   }
 
-  function rendre() {
+  function rendre(params = {}) {
+    if (params.livre && D.livre(params.livre)) {
+      const l = D.livre(params.livre);
+      if (PIECES[l.piece]) pieceChoisie = l.piece;
+      livreCherche = params.livre;
+      history.replaceState(null, '', '#/salle');
+    }
     const nomPiece = pieceAffichee();
     regler(nomPiece);
     const p = PIECES[nomPiece];
@@ -616,6 +676,11 @@
         </div>
         <div class="salle__scene" id="salle-scene"></div>
         <div class="salle__legende" id="salle-legende" aria-live="polite">${legende()}</div>
+        <div class="salle__recherche">
+          <label class="champ"><span>Où est ce livre ?</span>
+            <input type="search" class="saisie" data-input="salle-cherche" placeholder="Un titre, un auteur, un magazine…" spellcheck="false" autocomplete="off"></label>
+          <div id="salle-trouves"></div>
+        </div>
         <p class="salle__note" id="salle-note"></p>
       </div>`;
   }
@@ -627,6 +692,11 @@
     ecouteurs = [];
     monter(zone, pieceAffichee(), choisie);
     brancher();
+    if (livreCherche) {
+      const id = livreCherche;
+      livreCherche = '';
+      montrerLivre(id);
+    }
     const note = document.getElementById('salle-note');
     if (note && scene.horsPlan.length) {
       note.textContent = `${pluriel(scene.horsPlan.length, 'livre est rangé', 'livres sont rangés')} sur un meuble ou une étagère que le plan en 3D ne connaît pas encore, et n'${scene.horsPlan.length > 1 ? 'apparaissent' : 'apparaît'} pas ici.`;
@@ -641,7 +711,15 @@
     scene = null;
   }
 
+  Object.assign(Bib.changements, {
+    'salle-cherche': (el) => {
+      const zone = document.getElementById('salle-trouves');
+      if (zone) zone.innerHTML = resultatsRecherche(el.value);
+    },
+  });
+
   Object.assign(Bib.actions, {
+    'salle-trouver': (el) => trouver(el.dataset.id),
     'salle-piece': (el) => {
       if (!PIECES[el.dataset.piece] || el.dataset.piece === pieceAffichee()) return;
       pieceChoisie = el.dataset.piece;
@@ -652,7 +730,7 @@
       if (!v || !scene) return;
       if (el.dataset.vue === 'piece' && choisie) {
         choisie = '';
-        scene.svg.querySelectorAll('.salle__rang--choisi').forEach((r) => r.classList.remove('salle__rang--choisi'));
+        scene.svg.querySelectorAll('.salle__rang--choisi, .salle__livre--trouve').forEach((r) => r.classList.remove('salle__rang--choisi', 'salle__livre--trouve'));
         const zone = document.getElementById('salle-legende');
         if (zone) zone.innerHTML = legende();
       }

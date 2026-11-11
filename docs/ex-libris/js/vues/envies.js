@@ -52,7 +52,9 @@
       .filter(({ tomes }) => tomes.length && tomes.length <= 30);
     if (!lignes.length) return '';
     return `<section class="imprime-seulement"><h2>Tomes manquants de mes séries</h2><ul>${lignes
-      .map(({ g, tomes }) => `<li><strong>${esc(g.nom)}</strong> : ${tomes.length > 1 ? 'tomes' : 'tome'} ${esc(Bib.outils.enumerer(tomes.map(String)))}</li>`)
+      .map(({ g, tomes }) => `<li><strong>${esc(g.nom)}</strong> : ${g.magazine
+        ? `n° ${esc(Bib.vues.series.plages(tomes).join(', '))}`
+        : `${tomes.length > 1 ? 'tomes' : 'tome'} ${esc(Bib.outils.enumerer(tomes.map(String)))}`}</li>`)
       .join('')}</ul></section>`;
   }
 

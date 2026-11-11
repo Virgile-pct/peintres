@@ -21,6 +21,7 @@
     session: [], // inventaire en cours : { id, quoi: 'ajoute' | 'vu' | 'deplace' }
     arreterCamera: null,
     titres: null, // recherche par titre : { enCours, resultats, erreur }
+    suite: null, // magazines dont les numéros se suivent : { cleTitre, nom, numero, sens, annee, editeur, ark, source }
   };
   let file = Promise.resolve(); // les scans rapides sont traités dans l'ordre
 
@@ -210,6 +211,48 @@
   // Un magazine de kiosque déjà ajouté une fois : on reprend son nom et son éditeur.
   const revueConnue = (cleTitre) => D.etat.livres.find((l) => l.genre === 'Magazine' && l.isbn && l.isbn.startsWith(cleTitre) && l.serie);
 
+  // « 41 » → « 42 » en montant ; rien si le numéro n'est pas un nombre.
+  function numeroSuivant(numero, sens) {
+    const m = String(numero || '').match(/^(\d+)/);
+    if (!m) return '';
+    const n = Number(m[1]) + sens;
+    return n > 0 ? String(n) : '';
+  }
+
+  function rendreSuite() {
+    const s = etat.suite;
+    if (!s) return '';
+    const prochain = numeroSuivant(s.numero, s.sens);
+    return `<div class="suite-magazines">
+      <p>Numéros qui se suivent : le prochain scan de <strong>${esc(s.nom)}</strong> sera ajouté comme le <strong>n° ${esc(prochain)}</strong>.</p>
+      <button type="button" class="bouton bouton--discret" data-action="arreter-suite">Arrêter la suite</button>
+    </div>`;
+  }
+
+  // Un nouveau scan du magazine en cours de suite : ajouté sans formulaire, avec le numéro suivant
+  // (ou celui que la douchette a lu dans le petit code de droite).
+  async function continuerSuite(a) {
+    const s = etat.suite;
+    const numero = a.numero || numeroSuivant(s.numero, s.sens);
+    if (!numero) {
+      etat.suite = null;
+      return false;
+    }
+    s.numero = numero;
+    const present = numerosDeRevue(s.cleTitre, s.nom).find((l) => Bib.outils.cle(l.tome) === Bib.outils.cle(numero));
+    if (present) {
+      noterSession(present, 'vu');
+      montrer({ type: 'deja', livre: present });
+      return true;
+    }
+    const l = await ajouterLivre({
+      titre: `${s.nom} n° ${numero}`, serie: s.nom, tome: numero, annee: s.annee, genre: 'Magazine', isbn: a.ean, prix: a.prix || null,
+      editeur: s.editeur, ark: s.ark, source: s.source,
+    }, null);
+    montrer({ type: 'ajoute', livre: l });
+    return true;
+  }
+
   function rendreRevue(r) {
     const nom = r.revue ? r.revue.titre : '';
     const deja = numerosDeRevue(r.cleTitre, nom);
@@ -231,6 +274,13 @@
         <label class="champ"><span>Numéro</span><input class="saisie" name="numero" value="${esc(r.numero || '')}"></label>
         <label class="champ"><span>Année</span><input class="saisie" name="annee" inputmode="numeric"></label>
         <label class="champ champ--large"><span>Sujet du numéro (facultatif)</span><input class="saisie" name="sujet" placeholder="Sissi, impératrice d'Autriche…"></label>
+        <label class="champ champ--large"><span>Les numéros suivants de la pile se suivent ?</span>
+          <select class="saisie" name="suite">
+            <option value="">Non, je taperai chaque numéro</option>
+            <option value="1">Oui, en montant (41, 42, 43…)</option>
+            <option value="-1">Oui, en descendant (43, 42, 41…)</option>
+          </select>
+          <small>Si oui, chaque scan de ce magazine sera ajouté tout seul avec le numéro suivant.</small></label>
         <div class="resultat__actions champ--large">
           <button class="bouton" type="submit">Ajouter ce numéro</button>
           <button class="bouton bouton--discret" type="button" data-action="oublier-resultat">Laisser tomber</button>
@@ -264,6 +314,7 @@
       <ul class="resultat__situation">${situation(l)}</ul>
       ${r.deplace ? `<p class="resultat__note">Il était rangé ${r.deplace.avant ? `ailleurs (${esc(r.deplace.avant)})` : 'nulle part'} : il est maintenant noté sur cette étagère.</p>` : ''}
       ${inventaire && !r.deplace ? '<p class="resultat__note">Noté comme vu sur cette étagère.</p>' : ''}
+      ${etat.suite && l.genre === 'Magazine' ? rendreSuite() : ''}
       <div class="resultat__actions">
         <button type="button" class="bouton" data-action="fiche" data-id="${esc(l.id)}">Ouvrir la fiche</button>
         <button type="button" class="bouton bouton--second" data-action="exemplaire" data-id="${esc(l.id)}">J'en ai un exemplaire de plus</button>
@@ -305,6 +356,7 @@
       <p class="resultat__confirmation">Ajouté à la bibliothèque${D.emplacement(l) ? `, rangé : ${esc(D.emplacement(l))}` : ''}.</p>
       ${carteLivre(l)}
       ${r.envie ? '<p class="resultat__note">Rayé de ta liste d\'envies.</p>' : ''}
+      ${rendreSuite()}
       <div class="resultat__actions">
         <button type="button" class="bouton bouton--second" data-action="fiche" data-id="${esc(l.id)}">Ouvrir la fiche</button>
         <button type="button" class="bouton bouton--discret" data-action="annuler-ajout" data-id="${esc(l.id)}">Annuler l'ajout</button>
@@ -448,6 +500,8 @@
   async function traiterUn(saisie) {
     const a = I.analyser(saisie);
     if (a.type === 'invalide') return montrer({ type: 'invalide', code: a.brut });
+    if (etat.suite && !(a.type === 'revue' && a.cleTitre === etat.suite.cleTitre)) etat.suite = null; // autre chose : la suite s'arrête
+    if (a.type === 'revue' && etat.suite && (await continuerSuite(a))) return;
     if (a.type === 'revue') {
       etat.recherche = a.ean;
       majResultat();
@@ -584,6 +638,11 @@
       montrer({ type: 'deja', livre: l });
       toast(`Tu as maintenant ${l.exemplaires} exemplaires de « ${l.titre} ».`);
     },
+    'arreter-suite': () => {
+      etat.suite = null;
+      majResultat();
+      toast('Suite arrêtée : le prochain magazine demandera son numéro.');
+    },
     'annuler-ajout': async (el) => {
       const l = D.livre(el.dataset.id);
       if (!l) return;
@@ -645,6 +704,15 @@
       const r = etat.resultat;
       if (!r || r.type !== 'revue') return;
       const v = (nom) => form.elements[nom].value.trim();
+      // La douchette a écrit le code du livre suivant dans une case, et son « Entrée » a envoyé le formulaire :
+      // ce code part en scan, et le magazine n'est pas enregistré avec ce code pour nom.
+      const egare = ['revue', 'numero', 'annee', 'sujet'].find((n) => I.ressembleACode(v(n)));
+      if (egare) {
+        const code = v(egare);
+        form.elements[egare].value = '';
+        toast("Un code-barres a été lu dans le formulaire du magazine : il est cherché comme un nouveau scan. Le magazine d'avant n'est pas ajouté.", { duree: 9000 });
+        return traiter(code);
+      }
       const nom = v('revue');
       const numero = v('numero').replace(/^n°\s*/i, '');
       const cle = Bib.outils.cle;
@@ -656,6 +724,10 @@
         serie: nom, tome: numero, annee: v('annee'), genre: 'Magazine', isbn: r.code, prix: r.prix || null,
         editeur: r.revue ? r.revue.editeur : '', ark: r.revue ? r.revue.ark : '', source: r.revue ? r.revue.source : 'manuel',
       };
+      const sens = Number(v('suite'));
+      etat.suite = sens && numeroSuivant(numero, sens)
+        ? { cleTitre: r.cleTitre, nom, numero, sens, annee: v('annee'), editeur: fiche.editeur, ark: fiche.ark, source: fiche.source }
+        : null;
       const l = await ajouterLivre(fiche, null);
       montrer({ type: 'ajoute', livre: l });
     },

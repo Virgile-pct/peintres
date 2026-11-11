@@ -752,6 +752,9 @@ select.saisie { cursor: pointer; }
   .envie { grid-template-columns: 1fr; padding: 6pt 0; break-inside: avoid; }
   .envie .couv { display: none; }
   .imprime-seulement h2 { font-size: 14pt; margin: 18pt 0 6pt; }
+  body.impression-magazines .entete, body.impression-magazines .series:not(.magazines-manquants .series) { display: none !important; }
+  .serie--magazine { padding: 4pt 0; border: 0; border-bottom: 1px solid #ccc; border-radius: 0; break-inside: avoid; }
+  .serie--magazine .serie__bilan { margin: 2pt 0; font-size: 11pt; }
 }
 
 /* ---------- La pièce en 3D ---------- */
@@ -770,3 +773,29 @@ select.saisie { cursor: pointer; }
 .salle__legende p { margin: 0; }
 .salle__note { margin: 0; font-size: var(--t-s); color: var(--encre-pale); }
 .salle__note:empty { display: none; }
+
+/* ---------- Magazines dans Séries, saisie en suite ---------- */
+.magazines-manquants { margin-top: 34px; }
+.magazines-manquants__entete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 16px; }
+.serie--magazine .serie__bilan { font-size: var(--t-m); }
+.suite-magazines { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 12px 0; padding: 10px 14px;
+  border-radius: 8px; background: var(--vert-clair); }
+.suite-magazines p { margin: 0; }
+
+/* « Où est ce livre ? » */
+.salle__recherche { max-width: 560px; }
+.salle__trouves { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.salle__trouves .lien-livre { display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 6px; }
+.salle__trouves .lien-livre:hover { background: var(--papier-fonce); }
+.salle__trouves small { color: var(--encre-pale); }
+.salle__livre--trouve { fill: var(--laiton-clair); stroke: #FFF6DC; stroke-width: 0.5; animation: salle-clignote 1.1s var(--doux) infinite alternate; }
+@keyframes salle-clignote { from { opacity: 1; } to { opacity: 0.25; } }
+
+/* Couverture photographiée, dans la fiche */
+.couverture-photo { display: flex; flex-direction: column; gap: 10px; }
+.couverture-photo__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.couverture-photo__webcam { position: relative; display: flex; flex-direction: column; gap: 10px; }
+.couverture-photo__webcam[hidden] { display: none; }
+.couverture-photo__webcam video { width: 100%; border-radius: 8px; background: #111; }
+.couverture-photo__cadre { position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: calc(100% - 54px);
+  aspect-ratio: 2 / 3; border: 2px dashed rgba(255, 255, 255, 0.85); border-radius: 4px; pointer-events: none; }

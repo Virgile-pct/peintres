@@ -65,6 +65,71 @@
       ${aide ? `<small>${aide}</small>` : ''}</label>`;
   }
 
+  // ---------- Couverture photographiée ----------
+  // La photo est recadrée au format d'une couverture, réduite à 360 px de large et gardée dans la fiche
+  // en JPEG (une vingtaine de Ko). La réduction passe par un canvas hors écran : rien n'est affiché en canvas.
+
+  const LARGEUR_PHOTO = 360;
+  let flux = null; // webcam allumée pour la couverture
+
+  function rendreCouverturePhoto(l) {
+    const photo = String(l.couverture || '').startsWith('data:');
+    return `<div class="champ champ--large couverture-photo" data-zone="photo">
+      <span>Couverture</span>
+      <div class="couverture-photo__actions">
+        <button type="button" class="bouton bouton--second" data-action="couverture-webcam">${Bib.icones.camera}<span>Photographier avec la webcam</span></button>
+        <label class="bouton bouton--second" for="couverture-fichier">Choisir une image</label>
+        <input type="file" id="couverture-fichier" accept="image/*" data-change="couverture-fichier" class="lecteur-ecran">
+        ${l.couverture ? '<button type="button" class="bouton bouton--discret" data-action="couverture-retirer">Retirer la couverture</button>' : ''}
+      </div>
+      <div class="couverture-photo__webcam" id="couverture-webcam" hidden>
+        <video id="couverture-video" muted playsinline></video>
+        <span class="couverture-photo__cadre" aria-hidden="true"></span>
+        <div class="couverture-photo__actions">
+          <button type="button" class="bouton" data-action="couverture-prendre">Prendre la photo</button>
+          <button type="button" class="bouton bouton--discret" data-action="couverture-annuler">Annuler</button>
+        </div>
+      </div>
+      <label class="champ champ--large"><span>${photo ? 'Ou l\'adresse d\'une image sur internet (remplacerait la photo)' : 'Ou l\'adresse d\'une image sur internet'}</span>
+        <input class="saisie" type="url" data-champ="couverture" value="${photo ? '' : esc(l.couverture || '')}" placeholder="${photo ? 'Photo enregistrée dans la fiche' : 'https://…'}"></label>
+    </div>`;
+  }
+
+  // Image (fichier, ou image de la webcam) → JPEG réduit, en adresse « data: » à ranger dans la fiche.
+  async function reduire(image, recadrer) {
+    let { width: w, height: h } = image;
+    let sx = 0;
+    let sy = 0;
+    if (recadrer && w / h > 2 / 3) { // la webcam filme en paysage : on garde le milieu, au format 2/3
+      const l = Math.round((h * 2) / 3);
+      sx = Math.round((w - l) / 2);
+      w = l;
+    }
+    const largeur = Math.min(LARGEUR_PHOTO, w);
+    const hauteur = Math.round((h * largeur) / w);
+    const toile = new OffscreenCanvas(largeur, hauteur);
+    toile.getContext('2d').drawImage(image, sx, sy, w, h, 0, 0, largeur, hauteur);
+    const blob = await toile.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+    return new Promise((ok, ko) => {
+      const lecteur = new FileReader();
+      lecteur.onload = () => ok(lecteur.result);
+      lecteur.onerror = ko;
+      lecteur.readAsDataURL(blob);
+    });
+  }
+
+  async function enregistrerCouverture(l, adresse) {
+    l.couverture = adresse;
+    await D.enregistrerLivre(l, { type: 'couverture', detail: adresse ? 'photo' : 'retirée' });
+    majZone('haut', rendreHaut(l));
+    majZone('photo', rendreCouverturePhoto(l).replace(/^<div[^>]*>|<\/div>$/g, ''));
+  }
+
+  function eteindreWebcam() {
+    if (flux) flux.getTracks().forEach((p) => p.stop());
+    flux = null;
+  }
+
   function rendre(l) {
     const source = SOURCES[l.source] || l.source;
     const lienBnf = l.ark ? ` <a href="${esc(l.ark)}" target="_blank" rel="noopener">Voir la notice</a>` : '';
@@ -98,7 +163,7 @@
           ${champ(l, 'hauteur', 'Hauteur (cm)', { type: 'number' })}
           ${champ(l, 'prix', 'Prix neuf (€)', { type: 'number' })}
           ${champ(l, 'isbn', 'ISBN (code-barres)')}
-          ${champ(l, 'couverture', 'Adresse de l\'image de couverture', { large: true, type: 'url' })}
+          ${rendreCouverturePhoto(l)}
         </div>
         <label class="case-a-cocher"><input type="checkbox" data-champ="dedicace"${l.dedicace ? ' checked' : ''}><span>Livre dédicacé</span></label>
         <label class="champ champ--large"><span>Notes personnelles</span>
@@ -107,6 +172,7 @@
       </section>
       <section class="tiroir__pied">
         <p>Ajouté ${esc(depuis(l.dateAjout))} (${esc(dateLongue(l.dateAjout))}). Fiche : ${esc(source)}.${lienBnf}</p>
+        ${l.rangement && !l.sorti ? `<p><button type="button" class="lien-livre" data-action="voir-en-3d" data-id="${esc(l.id)}">Voir où il est dans la pièce en 3D</button></p>` : ''}
         ${l.sorti ? '' : `<details class="tiroir__retrait">
           <summary>Retirer ce livre de la bibliothèque</summary>
           <p>Il disparaît des étagères mais reste dans l'historique : si tu le rescannes un jour, Ex-libris s'en souviendra.</p>
@@ -138,6 +204,7 @@
   }
 
   function fermer() {
+    eteindreWebcam();
     if (!ouvertId) return;
     ouvertId = null;
     tiroir().classList.remove('ouvert');
@@ -198,6 +265,45 @@
   Object.assign(Bib.actions, {
     'fiche': (el) => ouvrir(el.dataset.id),
     'fermer-fiche': () => fermer(),
+    'couverture-webcam': async () => {
+      const zone = document.getElementById('couverture-webcam');
+      const video = document.getElementById('couverture-video');
+      try {
+        eteindreWebcam();
+        flux = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        video.srcObject = flux;
+        await video.play();
+        zone.hidden = false;
+        zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (e) {
+        eteindreWebcam();
+        toast(Bib.scanner.messageErreurCamera ? Bib.scanner.messageErreurCamera(e) : "La webcam n'a pas pu s'allumer.", { duree: 8000 });
+      }
+    },
+    'couverture-prendre': async () => {
+      const l = livreOuvert();
+      const video = document.getElementById('couverture-video');
+      if (!l || !video || !video.videoWidth) return;
+      const image = await createImageBitmap(video);
+      eteindreWebcam();
+      await enregistrerCouverture(l, await reduire(image, true));
+      toast('La couverture est enregistrée.');
+    },
+    'couverture-annuler': () => {
+      eteindreWebcam();
+      const zone = document.getElementById('couverture-webcam');
+      if (zone) zone.hidden = true;
+    },
+    'couverture-retirer': async () => {
+      const l = livreOuvert();
+      if (!l) return;
+      await enregistrerCouverture(l, '');
+      toast('Couverture retirée : Ex-libris en dessine une à la place.');
+    },
+    'voir-en-3d': (el) => {
+      fermer();
+      Bib.app.aller('salle', { livre: el.dataset.id });
+    },
 
     'statut': async (el) => {
       const l = livreOuvert();
@@ -254,6 +360,22 @@
       fermer();
       await D.supprimerLivre(l);
       toast(`La fiche « ${l.titre} » est supprimée.`);
+    },
+  });
+
+  Bib.changements = Bib.changements || {};
+  Object.assign(Bib.changements, {
+    'couverture-fichier': async (el) => {
+      const l = livreOuvert();
+      const fichier = el.files[0];
+      el.value = '';
+      if (!l || !fichier) return;
+      try {
+        await enregistrerCouverture(l, await reduire(await createImageBitmap(fichier), false));
+        toast('La couverture est enregistrée.');
+      } catch (e) {
+        toast("Cette image n'a pas pu être lue. Essaie une photo en JPEG ou en PNG.", { duree: 8000 });
+      }
     },
   });
 
