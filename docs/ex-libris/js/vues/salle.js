@@ -12,11 +12,14 @@
   const C = Bib.couverture;
 
   // ---------- Le plan, relevé sur les photos (en centimètres) ----------
-  // Murs vus de l'intérieur : « gauche » (grande bibliothèque), « fond » (fenêtre), « droite » (rampe).
+  // Murs vus de l'intérieur : « gauche », « fond », « droite » ; l'entrée est du côté ouvert.
   // s : distance depuis le bout gauche du mur, quand on lui fait face. Étagères numérotées depuis le haut.
   const PIECES = {
     Mezzanine: {
-      largeur: 420, profondeur: 420, hauteur: 260,
+      article: 'La', largeur: 420, profondeur: 420, hauteur: 260,
+      style: { mur: '#D8C8B6', papier: true, sol: '#5C3F2C', lames: '#3E2A1D' },
+      libelles: { gauche: 'La grande bibliothèque', fond: 'Le fond', droite: 'Le long de la rampe' },
+      vues: { droite: { cible: [420, 65, 115], zoom: 2.2, phi: 18 } }, // les meubles bas, de plus près
       tremie: { x: 110, z: 110, largeur: 220, profondeur: 310 }, // la cage d'escalier, entourée de sa rampe
       porte: { mur: 'gauche', s: 285, largeur: 90, hauteur: 200 }, // la porte aux faux livres
       fenetre: { mur: 'fond', s: 205, largeur: 110, bas: 95, hauteur: 105 },
@@ -35,6 +38,27 @@
         { nom: 'Bibliothèque basse gauche', mur: 'droite', s: 10, largeur: 70, hauteur: 115, profondeur: 32, etageres: 3 },
         { nom: 'Bibliothèque basse milieu', mur: 'droite', s: 80, largeur: 70, hauteur: 115, profondeur: 32, etageres: 3 },
         { nom: 'Bibliothèque basse droite', mur: 'droite', s: 150, largeur: 70, hauteur: 115, profondeur: 32, etageres: 3 },
+      ],
+    },
+    // La pièce aux magazines : murs verts, plafond à poutres, la table au milieu.
+    Bureau: {
+      article: 'Le', largeur: 320, profondeur: 400, hauteur: 230,
+      style: { mur: '#24463A', papier: false, sol: '#C68C55', lames: '#8F5E30' },
+      libelles: { gauche: 'Les classeurs', fond: 'Le fond', droite: 'Les piles de magazines' },
+      rideau: { mur: 'gauche', s: 0, largeur: 85 }, // le rideau aux faux livres
+      table: { x: 120, z: 170, largeur: 85, profondeur: 130, hauteur: 76 },
+      meubles: [
+        { nom: 'Classeurs à gauche', mur: 'gauche', s: 88, largeur: 95, hauteur: 215, profondeur: 32, etageres: 6 },
+        { nom: 'Vitrine du bureau', mur: 'gauche', s: 183, bas: 115, largeur: 65, hauteur: 100, profondeur: 35, vitrine: true },
+        { nom: 'Sous la vitrine du bureau', mur: 'gauche', s: 183, bas: 70, largeur: 65, hauteur: 45, profondeur: 35, etageres: 1, piles: true },
+        { nom: 'Placard du bureau', mur: 'gauche', s: 183, largeur: 65, hauteur: 70, profondeur: 35, placard: true },
+        { nom: 'Bibliothèque en merisier', mur: 'fond', s: 5, largeur: 70, hauteur: 200, profondeur: 30, etageres: 5, piles: true },
+        { nom: 'Magazines debout gauche', mur: 'fond', s: 110, largeur: 85, hauteur: 210, profondeur: 30, etageres: 7 },
+        { nom: 'Magazines debout droite', mur: 'fond', s: 200, largeur: 85, hauteur: 210, profondeur: 30, etageres: 7 },
+        { nom: 'Magazines en piles gauche', mur: 'droite', s: 10, largeur: 85, hauteur: 215, profondeur: 32, etageres: 7, piles: true },
+        { nom: 'Magazines en piles droite', mur: 'droite', s: 95, largeur: 85, hauteur: 215, profondeur: 32, etageres: 7, piles: true },
+        { nom: 'Meuble bas aux photos', mur: 'droite', s: 185, largeur: 80, hauteur: 105, profondeur: 32, etageres: 3, piles: true },
+        { nom: 'Classeurs à droite', mur: 'droite', s: 265, largeur: 90, hauteur: 215, profondeur: 32, etageres: 6 },
       ],
     },
   };
@@ -60,17 +84,28 @@
 
   // ---------- Caméra ----------
 
-  const VUES = {
-    piece: { libelle: 'Toute la pièce', theta: 32, phi: 30, cible: [215, 95, 215], zoom: 1 },
-    gauche: { libelle: 'La grande bibliothèque', theta: 90, phi: 10, cible: [0, 128, 205], zoom: 1.45 },
-    fond: { libelle: 'Le fond', theta: 0, phi: 10, cible: [215, 120, 0], zoom: 1.45 },
-    droite: { libelle: 'Le long de la rampe', theta: -90, phi: 18, cible: [420, 65, 115], zoom: 2.2 },
-    autre: { libelle: "L'autre côté", theta: -34, phi: 30, cible: [215, 95, 215], zoom: 1 },
-  };
+  // Les points de vue tout faits, calculés d'après les dimensions de la pièce (420 cm : zoom 1).
+  function vuesDe(p) {
+    const W = p.largeur;
+    const L = p.profondeur;
+    const k = 420 / Math.max(W, L);
+    const lib = p.libelles || {};
+    const vues = {
+      piece: { libelle: 'Toute la pièce', theta: 32, phi: 30, cible: [W / 2, 95, L / 2], zoom: k },
+      gauche: { libelle: lib.gauche || 'À gauche', theta: 90, phi: 10, cible: [0, p.hauteur / 2, L / 2], zoom: (1.45 * 420) / L },
+      fond: { libelle: lib.fond || 'Le fond', theta: 0, phi: 10, cible: [W / 2, p.hauteur / 2 - 10, 0], zoom: (1.45 * 420) / W },
+      droite: { libelle: lib.droite || 'À droite', theta: -90, phi: 10, cible: [W, p.hauteur / 2, L / 2], zoom: (1.45 * 420) / L },
+      autre: { libelle: "L'autre côté", theta: -34, phi: 30, cible: [W / 2, 95, L / 2], zoom: k },
+    };
+    for (const [cle, v] of Object.entries(p.vues || {})) Object.assign(vues[cle], v);
+    return vues;
+  }
   const THETA_MUR = { fond: 0, gauche: 90, droite: -90 };
   const LARGEUR_VUE = 720; // largeur du cadre à zoom 1, en cm
 
-  const cam = { ...VUES.piece, cible: [...VUES.piece.cible] };
+  const depart = vuesDe(PIECES[PIECE_PAR_DEFAUT]).piece;
+  const cam = { ...depart, cible: [...depart.cible] };
+  let camPiece = PIECE_PAR_DEFAUT; // la pièce pour laquelle la caméra est réglée
   let anim = null;
 
   function repere() {
@@ -96,7 +131,7 @@
   }
 
   const r1 = (x) => Math.round(x * 10) / 10;
-  const epaisseurCm = (l) => ((l.pages || 220) / 2) * 0.01 + 0.2;
+  const epaisseurCm = (l) => (l.genre === 'Magazine' ? 0.5 : ((l.pages || 220) / 2) * 0.01 + 0.2);
 
   function nomEtagere(m, i) {
     return m.etageres > 1 ? `${m.nom}, étagère ${i + 1}` : m.nom;
@@ -135,18 +170,42 @@
         <rect x="${w / 2 - 0.6}" y="4" width="1.2" height="${m.hauteur - 8}" fill="var(--bois-clair)"/>
         <circle cx="${w / 2 - 3}" cy="${m.hauteur / 2}" r="1.3" fill="var(--laiton)"/><circle cx="${w / 2 + 3}" cy="${m.hauteur / 2}" r="1.3" fill="var(--laiton)"/>`;
     }
+    if (m.placard) {
+      return `<rect width="${w}" height="${m.hauteur}" fill="var(--bois-clair)"/>
+        <rect x="4" y="4" width="${w / 2 - 5}" height="${m.hauteur - 10}" fill="#B98A55"/>
+        <rect x="${w / 2 + 1}" y="4" width="${w / 2 - 5}" height="${m.hauteur - 10}" fill="#B98A55"/>
+        <rect x="${w / 2 - 4}" y="${m.hauteur / 2 - 6}" width="1.4" height="12" rx="0.7" fill="#C9C9C9"/>
+        <rect x="${w / 2 + 2.6}" y="${m.hauteur / 2 - 6}" width="1.4" height="12" rx="0.7" fill="#C9C9C9"/>`;
+    }
     const lignes = rangees(m);
     const parts = [`<rect width="${w}" height="${m.hauteur}" fill="var(--bois-clair)"/>`];
     lignes.forEach((r, i) => {
       const nom = nomEtagere(m, i);
-      const livres = livresParRang.get(i) || [];
+      const tous = livresParRang.get(i) || [];
+      // Sur les meubles à piles, les magazines sont couchés ; ailleurs, debout comme des livres.
+      const livres = m.piles ? tous.filter((l) => l.genre !== 'Magazine') : tous;
+      const magazines = m.piles ? tous.filter((l) => l.genre === 'Magazine') : [];
       parts.push(`<rect x="3" y="${r1(r.y)}" width="${w - 6}" height="${r1(r.h)}" fill="#2C2119"/>`);
+      // Les magazines sont couchés en piles de 22 cm de large, à droite des livres.
+      const parPile = Math.max(1, Math.floor((r.h - 1) / 0.5));
+      const piles = [];
+      for (let k = 0; k < magazines.length; k += parPile) piles.push(magazines.slice(k, k + parPile));
+      const largeurPile = piles.length ? Math.min(22, (w - 7) / piles.length) : 0;
+      const placeLivres = w - 6.5 - piles.length * largeurPile;
+      piles.forEach((pile, k) => {
+        const x0 = w - 3.2 - (piles.length - k) * largeurPile;
+        pile.forEach((l, j) => {
+          // La tranche d'un magazine : surtout du papier, avec la couleur de la couverture dessus.
+          const y = r.y + r.h - (j + 1) * 0.5;
+          parts.push(`<rect x="${r1(x0 + 0.3)}" y="${r1(y)}" width="${r1(largeurPile - 0.8)}" height="0.46" fill="#E6DDCB"/><rect x="${r1(x0 + 0.3)}" y="${r1(y)}" width="${r1(largeurPile - 0.8)}" height="0.14" fill="${C.toile(l)[0]}"/>`);
+        });
+      });
       const total = livres.reduce((s, l) => s + epaisseurCm(l), 0);
-      const echelle = Math.min(1, (w - 6.5) / (total || 1));
+      const echelle = Math.min(1, Math.max(0, placeLivres) / (total || 1));
       let x = 3.2;
       for (const l of livres) {
         const lb = epaisseurCm(l) * echelle;
-        const hb = Math.min(r.h - 0.6, Math.max(11, l.hauteur || 18));
+        const hb = Math.min(r.h - 0.6, l.genre === 'Magazine' ? 28 : Math.max(11, l.hauteur || 18));
         parts.push(`<rect x="${r1(x)}" y="${r1(r.y + r.h - hb)}" width="${r1(Math.max(0.3, lb - 0.12))}" height="${r1(hb)}" fill="${C.toile(l)[0]}"/>`);
         x += lb;
       }
@@ -159,7 +218,8 @@
             <ellipse cx="${w / 2}" cy="${r1(y + 10)}" rx="4" ry="1.6" fill="var(--laiton)"/>`);
         }
       }
-      const titre = `${nom} : ${livres.length ? pluriel(livres.length, 'livre', 'livres') : 'vide'}`;
+      const contenu = [livres.length ? pluriel(livres.length, 'livre', 'livres') : '', magazines.length ? pluriel(magazines.length, 'magazine', 'magazines') : ''].filter(Boolean).join(' et ');
+      const titre = `${nom} : ${contenu || 'vide'}`;
       parts.push(`<rect class="salle__rang${nom === choisie ? ' salle__rang--choisi' : ''}" x="3" y="${r1(r.y)}" width="${w - 6}" height="${r1(r.h)}"
         data-rangement="${esc(nom)}" data-mur="${m.mur}" data-meuble="${esc(m.nom)}"><title>${esc(titre)}</title></rect>`);
     });
@@ -168,9 +228,27 @@
   }
 
   function dessinMur(p, nomMur, mur) {
-    const parts = [`<rect width="${mur.longueur}" height="${p.hauteur}" fill="#D8C8B6"/>
-      <rect width="${mur.longueur}" height="${p.hauteur}" fill="url(#salle-papier)"/>
+    const st = p.style;
+    const parts = [`<rect width="${mur.longueur}" height="${p.hauteur}" fill="${st.mur}"/>
+      ${st.papier ? `<rect width="${mur.longueur}" height="${p.hauteur}" fill="url(#salle-papier)"/>` : ''}
       <rect y="${p.hauteur - 8}" width="${mur.longueur}" height="8" fill="var(--bois)"/>`];
+    if (p.rideau && p.rideau.mur === nomMur) {
+      const { s, largeur } = p.rideau;
+      const teintes = ['#8C3A22', '#3F2A1C', '#A8742E', '#2F4A3A', '#6E2A1E', '#C9A45C'];
+      const faux = [`<rect x="${s}" y="4" width="${largeur}" height="${p.hauteur - 8}" fill="#5A3322"/>`];
+      for (let y = 10; y < p.hauteur - 20; y += 22) {
+        let x = s + 3;
+        let k = Math.round(y / 22);
+        while (x < s + largeur - 4) {
+          const lb = 3 + ((k * 5) % 4);
+          faux.push(`<rect x="${x}" y="${y + (k % 3)}" width="${lb}" height="${18 - (k % 3)}" fill="${teintes[k % teintes.length]}"/>`);
+          x += lb + 0.8;
+          k++;
+        }
+      }
+      for (let x = s + 8; x < s + largeur; x += 14) faux.push(`<rect x="${x}" y="4" width="3" height="${p.hauteur - 8}" fill="#000" opacity="0.18"/>`);
+      parts.push(faux.join(''));
+    }
     if (p.porte && p.porte.mur === nomMur) {
       const { s, largeur, hauteur } = p.porte;
       const y0 = p.hauteur - hauteur;
@@ -206,14 +284,34 @@
   }
 
   function dessinSol(p) {
-    const t = p.tremie;
     const lames = [];
-    for (let z = 14; z < p.profondeur; z += 14) lames.push(`<rect y="${z}" width="${p.largeur}" height="0.6" fill="#3E2A1D" opacity="0.5"/>`);
-    const marches = [];
-    for (let z = t.z + 30; z < t.z + t.profondeur; z += 24) marches.push(`<rect x="${t.x + 20}" y="${z}" width="${t.largeur - 40}" height="3" fill="#4A3B33"/>`);
-    return `<rect width="${p.largeur}" height="${p.profondeur}" fill="#5C3F2C"/>${lames.join('')}
-      <rect x="${t.x}" y="${t.z}" width="${t.largeur}" height="${t.profondeur}" fill="#1E1714"/>
-      <rect x="${t.x + 20}" y="${t.z + 20}" width="${t.largeur - 40}" height="${t.profondeur - 20}" fill="#2B221D"/>${marches.join('')}`;
+    for (let z = 14; z < p.profondeur; z += 14) lames.push(`<rect y="${z}" width="${p.largeur}" height="0.6" fill="${p.style.lames}" opacity="0.5"/>`);
+    const parts = [`<rect width="${p.largeur}" height="${p.profondeur}" fill="${p.style.sol}"/>${lames.join('')}`];
+    const t = p.tremie;
+    if (t) {
+      const marches = [];
+      for (let z = t.z + 30; z < t.z + t.profondeur; z += 24) marches.push(`<rect x="${t.x + 20}" y="${z}" width="${t.largeur - 40}" height="3" fill="#4A3B33"/>`);
+      parts.push(`<rect x="${t.x}" y="${t.z}" width="${t.largeur}" height="${t.profondeur}" fill="#1E1714"/>
+        <rect x="${t.x + 20}" y="${t.z + 20}" width="${t.largeur - 40}" height="${t.profondeur - 20}" fill="#2B221D"/>${marches.join('')}`);
+    }
+    return parts.join('');
+  }
+
+  // Un simple bloc de bois posé au sol (la table du bureau) : ses cinq faces visibles possibles.
+  function bloc({ x, z, largeur, profondeur, hauteur }) {
+    const bois = (l, h, c) => `<rect width="${l}" height="${h}" fill="${c}"/>`;
+    const dessus = `${bois(largeur, profondeur, '#8A5A32')}<rect x="6" y="6" width="${largeur - 12}" height="${profondeur - 12}" fill="#2F4A3A" opacity="0.55"/>`;
+    return {
+      table: true,
+      centre: [x + largeur / 2, hauteur / 2, z + profondeur / 2],
+      faces: [
+        face({ o: [x, hauteur, z], u: [1, 0, 0], v: [0, 0, 1], l: largeur, h: profondeur, n: HAUT, contenu: dessus }),
+        face({ o: [x, hauteur, z + profondeur], u: [1, 0, 0], v: BAS, l: largeur, h: hauteur, n: [0, 0, 1], contenu: bois(largeur, hauteur, '#7A4E2C') }),
+        face({ o: [x + largeur, hauteur, z], u: [-1, 0, 0], v: BAS, l: largeur, h: hauteur, n: [0, 0, -1], contenu: bois(largeur, hauteur, '#7A4E2C') }),
+        face({ o: [x, hauteur, z], u: [0, 0, 1], v: BAS, l: profondeur, h: hauteur, n: [-1, 0, 0], contenu: bois(profondeur, hauteur, '#7A4E2C') }),
+        face({ o: [x + largeur, hauteur, z + profondeur], u: [0, 0, -1], v: BAS, l: profondeur, h: hauteur, n: [1, 0, 0], contenu: bois(profondeur, hauteur, '#7A4E2C') }),
+      ],
+    };
   }
 
   function dessinRampe(longueur) {
@@ -268,11 +366,12 @@
     });
 
     const t = p.tremie;
-    const rampes = [
+    const rampes = (t ? [
       { o: [t.x, 95, t.z + t.profondeur], u: [0, 0, -1], l: t.profondeur },
       { o: [t.x, 95, t.z], u: [1, 0, 0], l: t.largeur },
       { o: [t.x + t.largeur, 95, t.z], u: [0, 0, 1], l: t.profondeur },
-    ].map((r) => ({
+    ] : []).map((r) => ({
+      rampe: true,
       centre: add(r.o, add(mul(r.u, r.l / 2), [0, -47, 0])),
       faces: [face({ o: r.o, u: r.u, v: BAS, l: r.l, h: 95, double: true, contenu: dessinRampe(r.l) })],
     }));
@@ -282,9 +381,10 @@
     const horsPlan = [];
     for (const [meuble, rangs] of parMeuble) {
       const m = connus.get(meuble);
-      for (const [i, liste] of rangs) if (!m || m.vitrine || i >= m.etageres) horsPlan.push(...liste);
+      for (const [i, liste] of rangs) if (!m || m.vitrine || m.placard || i >= m.etageres) horsPlan.push(...liste);
     }
-    return { p, sol, parois, objets: [...objets, ...rampes], horsPlan };
+    const decor = p.table ? [bloc(p.table)] : [];
+    return { p, sol, parois, objets: [...objets, ...rampes, ...decor], horsPlan };
   }
 
   // ---------- Dessin et mise à jour ----------
@@ -348,7 +448,8 @@
       // Un meuble vu de dos cacherait la pièce : il s'efface, comme le mur contre lequel il est posé.
       const facade = o.faces[o.faces.length - 1].face;
       if (o.objet.meuble) o.el.setAttribute('opacity', dot(facade.n, rep.versCamera) > 0 ? '1' : '0.16');
-      else o.el.setAttribute('opacity', cam.zoom > 1.3 ? '0.3' : '1'); // de près, la rampe ne cache plus les étagères du bas
+      // De près, la rampe ou la table ne cachent plus les étagères du bas.
+      else if (o.objet.rampe || o.objet.table) o.el.setAttribute('opacity', cam.zoom > 1.3 ? '0.3' : '1');
     }
     // Du plus loin au plus proche : les meubles du premier plan passent devant.
     const tries = [...scene.objets].sort((a, b) => dot(a.objet.centre, rep.versCamera) - dot(b.objet.centre, rep.versCamera));
@@ -452,9 +553,12 @@
     if (!choisie) {
       return `<p>Fais glisser la pièce pour tourner autour, et la molette pour t'approcher. Touche une étagère pour la voir de près.</p>`;
     }
-    const n = D.presents().filter((l) => l.rangement === choisie).length;
-    return `<p><strong>${esc(choisie)}</strong> : ${n ? pluriel(n, 'livre', 'livres') : 'aucun livre pour l\'instant'}.</p>
-      ${n ? `<a class="bouton" href="#/etageres?${esc(new URLSearchParams({ vue: 'couvertures', rangement: choisie }).toString())}">Voir ces livres</a>` : ''}
+    const ici = D.presents().filter((l) => l.rangement === choisie);
+    const n = ici.length;
+    const nMag = ici.filter((l) => l.genre === 'Magazine').length;
+    const detail = [n - nMag ? pluriel(n - nMag, 'livre', 'livres') : '', nMag ? pluriel(nMag, 'magazine', 'magazines') : ''].filter(Boolean).join(' et ');
+    return `<p><strong>${esc(choisie)}</strong> : ${n ? detail : 'rien pour l\'instant'}.</p>
+      ${n ? `<a class="bouton" href="#/etageres?${esc(new URLSearchParams({ vue: 'couvertures', rangement: choisie }).toString())}">${nMag === n ? 'Voir ces magazines' : 'Voir ces livres'}</a>` : ''}
       <button type="button" class="bouton bouton--second" data-action="salle-vue" data-vue="piece">Revenir à toute la pièce</button>`;
   }
 
@@ -469,24 +573,42 @@
 
   // ---------- Écran ----------
 
+  let pieceChoisie = ''; // la pièce choisie à l'écran ; sinon celle de l'inventaire en cours
+
   function pieceAffichee() {
+    if (PIECES[pieceChoisie]) return pieceChoisie;
     const r = D.etat.reglages;
     return PIECES[r.pieceCourante] ? r.pieceCourante : PIECE_PAR_DEFAUT;
   }
 
+  function regler(nomPiece) {
+    if (camPiece === nomPiece) return;
+    const v = vuesDe(PIECES[nomPiece]).piece;
+    Object.assign(cam, { theta: v.theta, phi: v.phi, zoom: v.zoom, cible: [...v.cible] });
+    camPiece = nomPiece;
+    choisie = '';
+  }
+
   function rendre() {
     const nomPiece = pieceAffichee();
-    const total = D.presents().filter((l) => l.piece === nomPiece).length;
+    regler(nomPiece);
+    const p = PIECES[nomPiece];
+    const ici = D.presents().filter((l) => l.piece === nomPiece);
+    const mags = ici.filter((l) => l.genre === 'Magazine').length;
+    const compte = [ici.length - mags ? pluriel(ici.length - mags, 'livre', 'livres') : '', mags ? pluriel(mags, 'magazine', 'magazines') : ''].filter(Boolean).join(' et ');
+    const noms = Object.keys(PIECES);
     return `
       <header class="entete">
         <div>
-          <h1>La ${esc(nomPiece.toLowerCase())} en 3D</h1>
-          <p>${pluriel(total, 'livre rangé', 'livres rangés')} dans la pièce, chacun sur son étagère avec la couleur de sa couverture dessinée.</p>
+          <h1>${esc(p.article)} ${esc(nomPiece.toLowerCase())} en 3D</h1>
+          <p>${compte ? `${esc(compte)} dans la pièce, chacun à sa place, de la couleur de sa couverture dessinée.` : 'Rien n\'y est encore rangé : la pièce se remplira au fil de l\'inventaire.'}</p>
         </div>
+        ${noms.length > 1 ? `<div class="segments" role="group" aria-label="Pièce">${noms.map((nom) =>
+          `<button type="button" data-action="salle-piece" data-piece="${esc(nom)}" aria-pressed="${nom === nomPiece}">${esc(nom)}</button>`).join('')}</div>` : ''}
       </header>
       <div class="salle">
         <div class="salle__commandes" role="group" aria-label="Points de vue">
-          ${Object.entries(VUES).map(([cle, v]) => `<button type="button" class="bouton bouton--second" data-action="salle-vue" data-vue="${cle}">${esc(v.libelle)}</button>`).join('')}
+          ${Object.entries(vuesDe(p)).map(([cle, v]) => `<button type="button" class="bouton bouton--second" data-action="salle-vue" data-vue="${cle}">${esc(v.libelle)}</button>`).join('')}
           <span class="salle__zoom">
             <button type="button" class="bouton bouton--second" data-action="salle-zoom" data-sens="-1" aria-label="S'éloigner">−</button>
             <button type="button" class="bouton bouton--second" data-action="salle-zoom" data-sens="1" aria-label="S'approcher">+</button>
@@ -520,8 +642,13 @@
   }
 
   Object.assign(Bib.actions, {
+    'salle-piece': (el) => {
+      if (!PIECES[el.dataset.piece] || el.dataset.piece === pieceAffichee()) return;
+      pieceChoisie = el.dataset.piece;
+      Bib.app.afficher({ garderDefilement: true });
+    },
     'salle-vue': (el) => {
-      const v = VUES[el.dataset.vue];
+      const v = scene && vuesDe(scene.piece)[el.dataset.vue];
       if (!v || !scene) return;
       if (el.dataset.vue === 'piece' && choisie) {
         choisie = '';
